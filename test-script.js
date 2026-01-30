@@ -3,8 +3,8 @@ const readline = require('readline');
 const crypto = require('crypto');
 
 // --- CONFIGURATION ---
-const CLIENT_ID = 'YOUR_CLIENT_ID_HERE';         // <--- FILL THIS IN
-const CLIENT_SECRET = 'YOUR_CLIENT_SECRET_HERE'; // <--- FILL THIS IN
+const CLIENT_ID = '8dfc1bd7c58423da78a6ed5ba14da113';         // <--- FILL THIS IN
+const CLIENT_SECRET = '2b6dc332cb1730c1e3a7203e4ae4d4ded6efa422ef0e01d9e26a57704ac863fa'; // <--- FILL THIS IN
 const ACCESS_TOKEN = 'PASTE_TOKEN_HERE';         // <--- Fill this in AFTER running auth
 
 
@@ -13,7 +13,7 @@ async function searchAnime() {
     try {
         const response = await axios.get('https://api.myanimelist.net/v2/anime', {
             headers: { 'X-MAL-CLIENT-ID': CLIENT_ID },
-            params: { q: 'One Piece', limit: 3 }
+            params: { q: 'Jujutsu Kaisen', limit: 5 }
         });
 
         response.data.data.forEach(anime => {
@@ -47,7 +47,7 @@ async function getAccessToken() {
             params.append('grant_type', 'authorization_code');
 
             const response = await axios.post('https://myanimelist.net/v1/oauth2/token', params);
-            console.log("\nYOUR ACCESS TOKEN:", response.data.access_token);
+            console.log("\n8dfc1bd7c58423da78a6ed5ba14da113", response.data.access_token);
         } catch (error) {
             console.error('Auth Error:', error.message);
         }
@@ -59,7 +59,7 @@ async function getAccessToken() {
 // --- PART 3: UPDATE LIST (Requires Access Token) ---
 async function updateList() {
     // Check if token is still the placeholder
-    if (ACCESS_TOKEN === 'PASTE_TOKEN_HERE') {
+    if (ACCESS_TOKEN === '8dfc1bd7c58423da78a6ed5ba14da113E') {
         console.log("Error: You need to paste your Access Token at the top of the file first!");
         return;
     }
@@ -87,6 +87,6 @@ async function updateList() {
 // --- MAIN EXECUTION ---
 // ONLY UNCOMMENT THE ONE YOU WANT TO RUN:
 
-// searchAnime();      // Run this to test searching
+searchAnime();      // Run this to test searching
 // getAccessToken();   // Run this to get your login token
 // updateList();       // Run this to update your list (needs token)
