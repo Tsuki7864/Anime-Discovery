@@ -80,14 +80,23 @@ body {
 
 /* Animations */
 @keyframes typing {
-    from { width: 0; }
-    to { width: 15ch; }
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 15ch;
+    }
 }
 
 @keyframes blink {
-    50% { border-color: transparent; }
+    50% {
+        border-color: transparent;
+    }
 }
 
 @keyframes fadeIn {
-    to { opacity: 0.85; }
+    to {
+        opacity: 0.85;
+    }
 }

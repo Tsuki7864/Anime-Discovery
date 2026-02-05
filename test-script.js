@@ -7,8 +7,8 @@ async function testJikanFetch(animeName) {
         const url = `https://api.jikan.moe/v4/anime?q=${animeName}&limit=1`;
 
         const response = await axios.get(url);
-        
-        const animeData = response.data.data[0]; 
+
+        const animeData = response.data.data[0];
 
         if (animeData) {
             console.log("Found Anime!:");
