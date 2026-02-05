@@ -30,4 +30,4 @@ async function testJikanFetch(animeName) {
 
 // --- RUN THE TEST ---
 // You can change 'Naruto' to any anime name you want to test
-testJikanFetch('Naruto');
+testJikanFetch('one piece');

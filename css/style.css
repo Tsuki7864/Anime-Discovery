@@ -1,4 +1,76 @@
-/* Search bar */
+/* --- THEME VARIABLES --- */
+:root {
+    /* DEFAULT: LIGHT MODE PALETTE */
+    --bg-gradient: linear-gradient(135deg, #ffffff, #e6e9f0); /* Clean white/gray */
+    --text-color: #1a1a1a;        /* Almost Black (easier on eyes than pure black) */
+    --cursor-color: #1a1a1a;      /* Typing cursor matches text */
+    --input-bg: #f3f4f6;          /* Light gray input box */
+    --input-text: #000000;
+    --button-bg: #090979;         /* Keep button blue as brand color */
+    --button-hover: #0b0bd4;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* YOUR ORIGINAL DARK MODE PALETTE */
+        --bg-gradient: linear-gradient(135deg, #020024, #090979, #000000);
+        --text-color: #ffffff;
+        --cursor-color: rgba(255, 255, 255, 0.75);
+        --input-bg: #ffffff;
+        --input-text: #000000;
+        --button-bg: #090979;
+        --button-hover: #0b0bd4;
+    }
+}
+
+/* --- RESET & GLOBAL STYLES --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    height: 100vh;
+    /* Use the variable instead of fixed colors */
+    background: var(--bg-gradient); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Use the variable */
+    color: var(--text-color); 
+    transition: background 0.5s ease, color 0.5s ease; /* Smooth theme switch */
+}
+
+/* --- CONTAINER --- */
+.container {
+    text-align: center;
+}
+
+/* --- TYPING ANIMATION --- */
+.typing {
+    font-size: 3.5rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    /* Use variable for cursor color so it shows up in Light Mode */
+    border-right: 3px solid var(--cursor-color); 
+    width: 0;
+    animation:
+        typing 2.8s steps(15, end) forwards,
+        blink 0.7s infinite;
+}
+
+.subtitle {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+    animation-delay: 3s;
+}
+
+/* --- SEARCH BOX --- */
 .search-box {
     margin-top: 2rem;
     display: flex;
@@ -16,87 +88,38 @@
     border: none;
     outline: none;
     font-size: 1rem;
+    /* Use variables for input box */
+    background: var(--input-bg);
+    color: var(--input-text);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Adds slight depth in Light Mode */
 }
 
 .search-box button {
     padding: 0.7rem 1.4rem;
     border-radius: 30px;
     border: none;
-    background: #090979;
-    color: white;
+    /* Use variables */
+    background: var(--button-bg);
+    color: white; /* Keep text white on the blue button */
     font-size: 1rem;
     cursor: pointer;
     transition: background 0.3s ease;
 }
 
 .search-box button:hover {
-    background: #0b0bd4;
+    background: var(--button-hover);
 }
 
-/* Reset */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Background */
-body {
-    height: 100vh;
-    background: linear-gradient(135deg, #020024, #090979, #000000);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-}
-
-/* Center content */
-.container {
-    text-align: center;
-}
-
-/* Typing animation */
-.typing {
-    font-size: 3.5rem;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    border-right: 3px solid rgba(255, 255, 255, 0.75);
-    width: 0;
-    animation:
-        typing 2.8s steps(15, end) forwards,
-        blink 0.7s infinite;
-}
-
-/* Subtitle */
-.subtitle {
-    margin-top: 1rem;
-    font-size: 1.2rem;
-    opacity: 0;
-    animation: fadeIn 1s ease forwards;
-    animation-delay: 3s;
-}
-
-/* Animations */
+/* --- ANIMATION KEYFRAMES --- */
 @keyframes typing {
-    from {
-        width: 0;
-    }
-
-    to {
-        width: 15ch;
-    }
+    from { width: 0; }
+    to { width: 15ch; }
 }
 
 @keyframes blink {
-    50% {
-        border-color: transparent;
-    }
+    50% { border-color: transparent; }
 }
 
 @keyframes fadeIn {
-    to {
-        opacity: 0.85;
-    }
+    to { opacity: 0.85; }
 }
