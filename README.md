@@ -1,1 +1,1 @@
-# Anime-Discovery
+# Anime-Discovery - Ilyas do the README; open the assignment in the google clssroom and follow the instructions shown.
