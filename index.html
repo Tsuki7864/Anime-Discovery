@@ -19,6 +19,15 @@
             <button type="button" onclick="window.location.href='html/anime_page.html'">search</button>
         </div>
     </div>
+    <script>
+        function searchAnime(){
+            const input = document.querySelector(".search-box input").value.trim();
+
+            if(input === "") return;
+
+            window.location.href = `html/anime_page.html?q=${encodeURIComponent(input)}`;
+        }
+    </script>
 
 </body>
 
