@@ -49,13 +49,21 @@ export function addToWantList(anime) {
     saveProfile();
 }
 
-// Helper function to do the math on genres
 function updateGenreStats(genres, weight) {
+    // SAFETY CHECK: If genres is null/undefined/empty, stop.
+    if (!genres || !Array.isArray(genres)) {
+        console.warn("Backend Warning: Attempted to update stats with no genre data.");
+        return;
+    }
+
     genres.forEach(g => {
-        if (!userProfile.genrePreferences[g.name]) {
-            userProfile.genrePreferences[g.name] = 0;
+        // SAFETY CHECK: Ensure the genre has a name
+        if (g && g.name) {
+            if (!userProfile.genrePreferences[g.name]) {
+                userProfile.genrePreferences[g.name] = 0;
+            }
+            userProfile.genrePreferences[g.name] += weight;
         }
-        userProfile.genrePreferences[g.name] += weight;
     });
 }
 
@@ -63,3 +71,6 @@ function updateGenreStats(genres, weight) {
 export function getGenrePreferences() {
     return userProfile.genrePreferences;
 }
+
+// Auto-load on startup
+loadUserProfile();
