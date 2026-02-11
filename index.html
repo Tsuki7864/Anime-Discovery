@@ -16,7 +16,7 @@
 
         <div class="search-box">
             <input type="text" placeholder="type animes you've seen...">
-            <button type="button" onclick="window.location.href='html/anime_page.html'">search</button>
+            <button type="button" onclick="searchAnime()">search</button>
         </div>
     </div>
     <script>
@@ -25,7 +25,7 @@
 
             if(input === "") return;
 
-            window.location.href = `html/anime_page.html?q=${encodeURIComponent(input)}`;
+            window.location.href = `html/results.html?q=${encodeURIComponent(input)}`;
         }
     </script>
 
