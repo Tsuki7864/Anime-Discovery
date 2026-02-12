@@ -11,11 +11,16 @@
 
 <body>
 <div class = "container">
-    <h1>Recommendations</h1>
+    <h1>Results for: <span id="search-query"></span></h1>
     <div id="anime-grid" class="anime-grid"></div>
     </div>
 
     <script type="module" src="../js/script.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
+        document.getElementById('search-query').textContent = query;
+    </script>
 </div>
 </body>
 
