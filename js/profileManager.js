@@ -1,92 +1,89 @@
-// profileManager.js
-// ROLE: The "Mock Database" - Handles saving/loading and genre weighting
-
-const STORAGE_KEY = 'otakuMatch_user_profile';
+const STORAGE_KEY = 'anime_discovery_profile';
 
 // Default empty profile
 let userProfile = {
-    watched: [],       // List of IDs (History)
-    wantToWatch: [],   // List of IDs (Intent)
-    genrePreferences: {} // { "Action": 5, "Romance": 2 }
+    watched: [],       
+    wantToWatch: [],   
+    genrePreferences: {}, 
+    lengthPreferences: { "short": 0, "medium": 0, "long": 0 } // NEW: Length tracking
 };
 
-// 1. Load data from Browser LocalStorage
+// 1. Load data
 export function loadUserProfile() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
         try {
             userProfile = JSON.parse(saved);
-            console.log("Backend: User profile loaded.", userProfile);
+            // Safety check in case it's an old save file without length tracking
+            if (!userProfile.lengthPreferences) {
+                userProfile.lengthPreferences = { "short": 0, "medium": 0, "long": 0 };
+            }
         } catch (e) {
-            console.error("Backend: Corrupt profile data found. Resetting.");
             resetProfile();
         }
     }
     return userProfile;
 }
 
-// 2. Save data to Browser LocalStorage
 function saveProfile() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userProfile));
 }
 
-// 3. Action: Add to Watched (Weight: 1)
+// 2. Action: Watched (The Heavy Weight: +5)
 export function addToWatched(anime) {
-    // Prevent duplicates
     if (userProfile.watched.includes(anime.mal_id)) return;
     
     userProfile.watched.push(anime.mal_id);
-    
-    // Update Genre Weights (Standard Boost)
-    updateGenreStats(anime.genres, 1); 
+    updateGenreStats(anime.genres, 5); 
+    updateLengthStats(anime.episodes, 5);
     
     saveProfile();
-    console.log(`Backend: ${anime.title} added to History (Weight +1).`);
+    console.log(`[Database] Added ${anime.title} to Watched. (+5 Points)`);
 }
 
-// 4. Action: Add to Want-to-Watch (Weight: 3)
+// 3. Action: Want-to-Watch (The Light Weight: +2)
 export function addToWantList(anime) {
     if (userProfile.wantToWatch.includes(anime.mal_id)) return;
 
     userProfile.wantToWatch.push(anime.mal_id);
-    
-    // Update Genre Weights (High Priority Boost!)
-    updateGenreStats(anime.genres, 3); 
+    updateGenreStats(anime.genres, 2); 
+    updateLengthStats(anime.episodes, 2);
     
     saveProfile();
-    console.log(`Backend: ${anime.title} added to Want-to-Watch (Weight +3).`);
+    console.log(`[Database] Added ${anime.title} to Want List. (+2 Points)`);
 }
 
-// 5. Helper: Update the genre "Bank" with safety checks
+// 4. Update Helpers
 function updateGenreStats(genres, weight) {
-    // SAFETY CHECK: If genres is null/undefined/empty, stop.
     if (!genres || !Array.isArray(genres)) return;
-
     genres.forEach(g => {
-        // Ensure the genre has a name
         if (g && g.name) {
-            if (!userProfile.genrePreferences[g.name]) {
-                userProfile.genrePreferences[g.name] = 0;
-            }
+            if (!userProfile.genrePreferences[g.name]) userProfile.genrePreferences[g.name] = 0;
             userProfile.genrePreferences[g.name] += weight;
         }
     });
 }
 
-// 6. Getter: Expose preferences for the Algorithm
-export const getGenrePreferences = () => userProfile.genrePreferences;
+function updateLengthStats(episodes, weight) {
+    // If episodes is null/0 (ongoing/unknown), we just skip it
+    if (!episodes || episodes === 0) return; 
 
-// 7. Getter: Get list of IDs to EXCLUDE (Watched + Want)
+    if (episodes <= 13) userProfile.lengthPreferences["short"] += weight;
+    else if (episodes <= 26) userProfile.lengthPreferences["medium"] += weight;
+    else userProfile.lengthPreferences["long"] += weight;
+}
+
+// 5. Getters for the Algorithm
+export const getGenrePreferences = () => userProfile.genrePreferences;
+export const getLengthPreferences = () => userProfile.lengthPreferences;
 export function getExcludedIds() {
-    // Returns a combined list of unique IDs to hide from recommendations
     return [...new Set([...userProfile.watched, ...userProfile.wantToWatch])];
 }
 
-// 8. Debug Tool: Reset Profile
+// 6. Reset
 export function resetProfile() {
     localStorage.removeItem(STORAGE_KEY);
     location.reload();
 }
 
-// Auto-initialize when file is imported
 loadUserProfile();
