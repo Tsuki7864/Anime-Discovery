@@ -1,43 +1,55 @@
 // algorithm.js
-// ROLE: The Brain - Calculates how much an anime matches the user's profile
+// ROLE: The Advanced Brain - Calculates suggestions using Tags, Length, and MAL Rating
 
 export function calculateRecommendations(candidateAnimes, userProfile) {
     const { genrePreferences, lengthPreferences } = userProfile;
 
-    // 1. Loop through the pool of new animes
     const scoredList = candidateAnimes.map(anime => {
-        let score = 0;
+        let baseScore = 0;
 
-        // --- FACTOR 1: GENRES ---
-        if (anime.genres) {
-            anime.genres.forEach(genre => {
-                // If the user has points for this genre, add them to the score!
-                if (genrePreferences[genre.name]) {
-                    score += genrePreferences[genre.name];
+        // --- FACTOR 1: UNIFIED TAGS (Genres + Themes + Demographics) ---
+        // Combine all descriptive arrays Jikan gives us into one list
+        const allTags = [
+            ...(anime.genres || []),
+            ...(anime.themes || []),
+            ...(anime.demographics || [])
+        ];
+
+        if (allTags.length > 0) {
+            allTags.forEach(tag => {
+                if (genrePreferences[tag.name]) {
+                    baseScore += genrePreferences[tag.name];
                 }
             });
+                        baseScore = baseScore / allTags.length; 
         }
 
-        // --- FACTOR 2: LENGTH ---
-        const epCount = anime.episodes || 0; // Fallback to 0 if unknown
+        // --- FACTOR 2: LENGTH PREFERENCE ---
+        const epCount = anime.episodes || 0;
         let lengthCategory = "unknown";
         
         if (epCount > 0 && epCount <= 13) lengthCategory = "short";
         else if (epCount > 13 && epCount <= 26) lengthCategory = "medium";
         else if (epCount > 26) lengthCategory = "long";
 
-        // If the user likes this length, give a 1.5x multiplier bonus to their length preference score
         if (lengthPreferences[lengthCategory]) {
-            score += (lengthPreferences[lengthCategory] * 1.5); 
+            baseScore += (lengthPreferences[lengthCategory] * 1.5); 
         }
 
-        // 2. Return the anime with its new calculated score
+        // --- FACTOR 3: QUALITY MULTIPLIER (The Game Changer) ---
+        // Jikan provides 'anime.score' (e.g., 8.5). If unranked, default to 5.0.
+        const malRating = anime.score || 5.0; 
+        
+        // Multiply their personal match score by the MAL quality rating percentage
+        const finalScore = baseScore * (malRating / 10);
+
         return {
             ...anime,
-            matchScore: Math.round(score) // Keep the number clean
+            matchScore: Math.round(finalScore), // The new, highly accurate score
+            malRating: malRating // Keep this to show on the UI later
         };
     });
 
-    // 3. Sort the list from Highest Score to Lowest Score
+    // Sort the list from Highest Final Score to Lowest
     return scoredList.sort((a, b) => b.matchScore - a.matchScore);
 }
