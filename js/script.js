@@ -1,6 +1,6 @@
-import { 
-    addToWatched, addToWantList, 
-    getGenrePreferences, getLengthPreferences, getExcludedIds 
+import {
+    addToWatched, addToWantList,
+    getGenrePreferences, getLengthPreferences, getExcludedIds
 } from './profileManager.js';
 
 const BASE_URL = "https://api.jikan.moe/v4";
@@ -8,12 +8,12 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- 1. API FETCHING ---
 async function fetchFromJikan(endpoint) {
-    await delay(600); 
+    await delay(600);
     try {
         const response = await fetch(`${BASE_URL}${endpoint}`);
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
         const data = await response.json();
-        return data.data; 
+        return data.data;
     } catch (error) {
         console.error("Fetch Failed:", error);
         return [];
@@ -24,10 +24,10 @@ async function fetchFromJikan(endpoint) {
 function calculateRecommendations(candidates) {
     const genrePrefs = getGenrePreferences();
     const lengthPrefs = getLengthPreferences();
-    
+
     return candidates.map(anime => {
         let score = 0;
-        
+
         // A. Factor 1: Genre Matching
         if (anime.genres) {
             anime.genres.forEach(g => {
@@ -40,7 +40,7 @@ function calculateRecommendations(candidates) {
         // B. Factor 2: Length Matching
         const epCount = anime.episodes || 0;
         let lengthCategory = "unknown";
-        
+
         if (epCount > 0 && epCount <= 13) lengthCategory = "short";
         else if (epCount > 13 && epCount <= 26) lengthCategory = "medium";
         else if (epCount > 26) lengthCategory = "long";
@@ -61,7 +61,7 @@ function calculateRecommendations(candidates) {
 // --- 3. UI GENERATOR ---
 function renderAnimeCards(animeList) {
     const resultsContainer = document.querySelector('#anime-grid');
-    resultsContainer.innerHTML = ''; 
+    resultsContainer.innerHTML = '';
 
     if (!animeList || animeList.length === 0) {
         resultsContainer.innerHTML = '<p>No results found.</p>';
@@ -72,7 +72,7 @@ function renderAnimeCards(animeList) {
         const genresJson = JSON.stringify(anime.genres || []).replace(/"/g, '&quot;');
         const imgUrl = anime.images?.jpg?.image_url || 'https://via.placeholder.com/225x318?text=No+Image';
         const epText = anime.episodes ? `${anime.episodes} Episodes` : 'Ongoing';
-        
+
         const card = document.createElement('div');
         card.className = 'anime-card';
         card.innerHTML = `
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchBtn.addEventListener('click', async () => {
             const query = document.querySelector('#search-input').value;
             if (!query) return;
-            
+
             loadingOverlay.style.display = 'flex';
             const results = await fetchFromJikan(`/anime?q=${query}&limit=12`);
             renderAnimeCards(results);
@@ -115,21 +115,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (suggestBtn) {
         suggestBtn.addEventListener('click', async () => {
             loadingOverlay.style.display = 'flex';
-            
+
             try {
                 // Fetch a large pool of popular anime to test against
                 const candidates = await fetchFromJikan('/top/anime?limit=25');
-                
+
                 // Score them
                 const scored = calculateRecommendations(candidates);
-                
+
                 // Apply Exclusion Filter
                 const exclusions = getExcludedIds();
                 const finalPicks = scored.filter(a => !exclusions.includes(a.mal_id));
-                
-                // Show the top 10 matches
-                renderAnimeCards(finalPicks.slice(0, 10));
 
+                // TWEAK: Change from slice(0, 10) to slice(0, 15) to match your 10-15 requirement
+                renderAnimeCards(finalPicks.slice(0, 15));
+                
             } catch (err) {
                 console.error(err);
                 alert("Error generating suggestions.");

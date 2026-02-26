@@ -2,9 +2,9 @@ const STORAGE_KEY = 'anime_discovery_profile';
 
 // Default empty profile
 let userProfile = {
-    watched: [],
-    wantToWatch: [],
-    genrePreferences: {},
+    watched: [],       
+    wantToWatch: [],   
+    genrePreferences: {}, 
     lengthPreferences: { "short": 0, "medium": 0, "long": 0 } // NEW: Length tracking
 };
 
@@ -31,44 +31,30 @@ function saveProfile() {
 
 // --- UPDATED ACTIONS IN profileManager.js ---
 
-export function addToWatched(anime) {
-    if (userProfile.watched.includes(anime.mal_id)) return;
-
-    userProfile.watched.push(anime.mal_id);
-
-    // NEW: Combine Genres, Themes, and Demographics into one master array
-    const allTags = [
-        ...(anime.genres || []),
-        ...(anime.themes || []),
-        ...(anime.demographics || [])
-    ];
-
-    // Send the combined tags to the tracker (+5 Weight)
-    updateGenreStats(allTags, 5);
-    updateLengthStats(anime.episodes, 5);
-
-    saveProfile();
-    console.log(`[Database] Added ${anime.title} to Watched. (+5 Points)`);
-}
-
 export function addToWantList(anime) {
     if (userProfile.wantToWatch.includes(anime.mal_id)) return;
-
     userProfile.wantToWatch.push(anime.mal_id);
-
-    // NEW: Combine Genres, Themes, and Demographics into one master array
-    const allTags = [
-        ...(anime.genres || []),
-        ...(anime.themes || []),
-        ...(anime.demographics || [])
-    ];
-
-    // Send the combined tags to the tracker (+2 Weight)
-    updateGenreStats(allTags, 2);
-    updateLengthStats(anime.episodes, 2);
-
+    
+    const allTags = [...(anime.genres || []), ...(anime.themes || []), ...(anime.demographics || [])];
+    
+    // TWEAK: "To Watch" is now the HEAVY weight (+5 Points)
+    updateGenreStats(allTags, 5); 
+    updateLengthStats(anime.episodes, 5);
+    
     saveProfile();
-    console.log(`[Database] Added ${anime.title} to Want List. (+2 Points)`);
+}
+
+export function addToWatched(anime) {
+    if (userProfile.watched.includes(anime.mal_id)) return;
+    userProfile.watched.push(anime.mal_id);
+    
+    const allTags = [...(anime.genres || []), ...(anime.themes || []), ...(anime.demographics || [])];
+    
+    // TWEAK: "Already Watched" is now the LIGHTER weight (+2 Points)
+    updateGenreStats(allTags, 2); 
+    updateLengthStats(anime.episodes, 2);
+    
+    saveProfile();
 }
 
 // 4. Update Helpers
@@ -84,7 +70,7 @@ function updateGenreStats(genres, weight) {
 
 function updateLengthStats(episodes, weight) {
     // If episodes is null/0 (ongoing/unknown), we just skip it
-    if (!episodes || episodes === 0) return;
+    if (!episodes || episodes === 0) return; 
 
     if (episodes <= 13) userProfile.lengthPreferences["short"] += weight;
     else if (episodes <= 26) userProfile.lengthPreferences["medium"] += weight;

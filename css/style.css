@@ -170,3 +170,51 @@ body {
 .btn-want.active {
     opacity: 0.7;
 }
+
+/* --- CSS FOR THE HOVER EFFECT --- */
+
+.anime-card {
+    position: relative; /* Crucial for the hover effect */
+    overflow: hidden;   /* Hides the buttons when they slide down */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+/* Make the whole card lift slightly on hover */
+.anime-card:hover {
+    transform: translateY(-5px);
+}
+
+/* The Button Group - Hidden by default at the bottom */
+.anime-card .btn-group {
+    position: absolute;
+    bottom: -60px; /* Hidden below the card */
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.8); /* Dark transparent background */
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+    transition: bottom 0.3s ease-in-out; /* The sliding animation */
+}
+
+/* When hovering over the card, slide the buttons up */
+.anime-card:hover .btn-group {
+    bottom: 0; 
+}
+
+/* Basic styling to make the buttons look like your blueprint */
+.btn-group button {
+    background: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.btn-want { color: #d97706; } /* Bookmark color */
+.btn-watched { color: #2563eb; } /* History color */
+.btn-mal { color: #1d4ed8; } /* MAL Blue */
