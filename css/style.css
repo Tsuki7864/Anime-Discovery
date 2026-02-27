@@ -218,3 +218,64 @@ body {
 .btn-want { color: #d97706; } /* Bookmark color */
 .btn-watched { color: #2563eb; } /* History color */
 .btn-mal { color: #1d4ed8; } /* MAL Blue */
+/* ===== RESULTS PAGE FULL LAYOUT ===== */
+
+.results-body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #05053d, #090979);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 0;
+}
+
+.results-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.results-panel {
+    background: #000000;
+    width: 85%;
+    max-width: 1200px;
+    padding: 40px;
+    border-radius: 6px;
+}
+/* ===== CLEAN POSTER GRID ===== */
+
+#anime-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 30px;
+}
+
+.anime-card {
+    text-align: center;
+}
+
+.anime-card img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 4px;
+    transition: transform 0.3s ease;
+}
+
+/* Subtle Hover */
+.anime-card img:hover {
+    transform: scale(1.05);
+}
+.search-box {
+    margin-bottom: 30px;
+}
+
+.search-box input {
+    width: 320px;
+    padding: 10px 15px;
+    border-radius: 25px;
+}
+
+.search-box button {
+    border-radius: 25px;
+}

@@ -1,27 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Results</title>
     <link rel="stylesheet" href="../css/style.css" />
-
 </head>
 
-<body>
-<div class = "container">
-    <h1>Results for: <span id="search-query"></span></h1>
-    <div id="anime-grid" class="anime-grid"></div>
+<body class="results-body">
+
+<div class="results-wrapper">
+    <div class="results-panel">
+
+        <h2 class="results-title">
+            Results for: <span id="search-query"></span>
+        </h2>
+
+        <div style="text-align:center; margin-bottom:20px;">
+            <button id="btn-suggest" class="btn-want">
+                🎯 Get Smart Recommendations
+            </button>
+        </div>
+
+        <div id="anime-grid"></div>
+
     </div>
-
-    <script type="module" src="../js/script.js"></script>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const query = urlParams.get('q');
-        document.getElementById('search-query').textContent = query;
-    </script>
 </div>
-</body>
 
+<div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<script type="module" src="../js/script.js"></script>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const query = urlParams.get('q');
+    document.getElementById('search-query').textContent = query;
+</script>
+
+</body>
 </html>
