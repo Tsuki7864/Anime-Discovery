@@ -126,13 +126,14 @@ const genreIds = baseGenres.slice(0, 3); // take up to 3 genres
 
 let candidates = [];
 for (const gid of genreIds) {
-    const batch = await fetchFromJikan(`/anime?genres=${gid}&limit=25`);
+    // NEW: We added order_by=members and sort=desc
+    const batch = await fetchFromJikan(`/anime?genres=${gid}&order_by=members&sort=desc&limit=25`);
     candidates = candidates.concat(batch);
 }
 
-// Fallback if genre search returns nothing (rate limit / empty)
+// Fallback if genre search returns nothing
 if (!candidates.length) {
-    candidates = await fetchFromJikan(`/top/anime?limit=50`);
+    candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&limit=50`);
 }
 
     // 3️⃣ Score by shared genres
