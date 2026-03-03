@@ -65,17 +65,12 @@ function renderAnimeCards(animeList) {
         "https://via.placeholder.com/225x318?text=No+Image";
 
         card.innerHTML = `
-            <img src="${img}" alt="${anime.title}">
-            <h3>${anime.title}</h3>
-            <p>${anime.episodes || "Ongoing"} Episodes</p>
-            ${anime.matchScore !== undefined ? 
-                `<p><strong>Match Score: ${anime.matchScore}</strong></p>` : ""
-            }
-            <div class="card-buttons">
-                <button class="btn-watched">Watched</button>
-                <button class="btn-want">Want</button>
-            </div>
-        `;
+    <img src="${img}" alt="${anime.title}">
+    <div class="anime-overlay">
+        <h3>${anime.title}</h3>
+        <p>${anime.synopsis ? anime.synopsis.substring(0, 200) + "..." : "No description available."}</p>
+    </div>
+`;
 
         grid.appendChild(card);
     });
@@ -97,18 +92,79 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const suggestBtn = document.querySelector("#btn-suggest");
 
-    suggestBtn?.addEventListener("click", async () => {
+suggestBtn?.addEventListener("click", async () => {
 
-        overlay.style.display = "flex";
+    overlay.style.display = "flex";
 
-        const candidates = await fetchFromJikan("/top/anime?limit=25");
-        const scored = calculateRecommendations(candidates);
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get("q");
 
-        const exclusions = getExcludedIds();
-        const filtered = scored.filter(a => !exclusions.includes(a.mal_id));
-
-        renderAnimeCards(filtered.slice(0, 15));
-
+    if (!query) {
+        alert("Search for an anime first.");
         overlay.style.display = "none";
-    });
+        return;
+    }
+
+    // 1️⃣ Get the anime the user searched
+    const searchResults = await fetchFromJikan(`/anime?q=${query}&limit=1`);
+    if (!searchResults.length) {
+        alert("Anime not found.");
+        overlay.style.display = "none";
+        return;
+    }
+
+    const baseAnime = searchResults[0];
+    const baseGenres = baseAnime.genres.map(g => g.mal_id);
+
+    if (!baseGenres.length) {
+        overlay.style.display = "none";
+        return;
+    }
+
+    /// 2️⃣ Fetch candidates from multiple genres (more reliable than 1 genre)
+const genreIds = baseGenres.slice(0, 3); // take up to 3 genres
+
+let candidates = [];
+for (const gid of genreIds) {
+    const batch = await fetchFromJikan(`/anime?genres=${gid}&limit=25`);
+    candidates = candidates.concat(batch);
+}
+
+// Fallback if genre search returns nothing (rate limit / empty)
+if (!candidates.length) {
+    candidates = await fetchFromJikan(`/top/anime?limit=50`);
+}
+
+    // 3️⃣ Score by shared genres
+    const scored = candidates.map(anime => {
+
+        let matchCount = 0;
+
+        anime.genres?.forEach(g => {
+            if (baseGenres.includes(g.mal_id)) {
+                matchCount++;
+            }
+        });
+
+        return {
+            ...anime,
+            matchScore: matchCount
+        };
+
+    }).sort((a, b) => b.matchScore - a.matchScore);
+
+    const exclusions = getExcludedIds();
+
+let filtered = scored
+    .filter(a => a.mal_id !== baseAnime.mal_id)
+    .filter(a => !exclusions.includes(a.mal_id));
+
+// If everything got filtered out, show the best scored anyway (except baseAnime)
+if (!filtered.length) {
+    filtered = scored.filter(a => a.mal_id !== baseAnime.mal_id);
+}
+
+renderAnimeCards(filtered.slice(0, 15));
+    overlay.style.display = "none";
+});
 });
