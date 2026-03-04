@@ -61,21 +61,29 @@ function renderAnimeCards(animeList) {
         const card = document.createElement('div');
         card.className = "anime-card";
 
-        const img = anime.images?.jpg?.image_url || 
+        const img = anime.images?.jpg?.image_url ||
         "https://via.placeholder.com/225x318?text=No+Image";
 
+        const synopsis = anime.synopsis
+        ? anime.synopsis.substring(0, 200) + "..."
+        : "No description available.";
+
         card.innerHTML = `
-    <img src="${img}" alt="${anime.title}">
-    <div class="anime-overlay">
-        <h3>${anime.title}</h3>
-        <p>${anime.synopsis ? anime.synopsis.substring(0, 200) + "..." : "No description available."}</p>
-    </div>
-`;
+            <img src="${img}" alt="${anime.title}">
+            <div class="anime-overlay">
+                <h3>${anime.title}</h3>
+                <p>${synopsis}</p>
+
+                <div class="overlay-buttons">
+                    <button class="btn-watched">Watched</button>
+                    <button class="btn-want">Want</button>
+                </div>
+            </div>
+        `;
 
         grid.appendChild(card);
     });
 }
-
 document.addEventListener("DOMContentLoaded", async () => {
 
     const overlay = document.querySelector("#loading-overlay");
