@@ -86,7 +86,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         btn.innerText = "Calculating...";
         btn.style.opacity = "0.7"; 
         btn.style.cursor = "not-allowed";
-        // -------------------------------
 
         if (overlay) overlay.style.display = "flex";
 
