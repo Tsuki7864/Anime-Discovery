@@ -311,19 +311,16 @@ body {
 .anime-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-        to top,
-        rgba(0,0,0,0.95) 20%,
-        rgba(0,0,0,0.6) 60%,
-        transparent 100%
-    );
+    background: rgba(0,0,0,0.9);
     color: white;
     opacity: 0;
     transition: opacity 0.3s ease;
-    padding: 15px;
+
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: flex-start;
+
+    padding: 12px;
 }
 
 .anime-card:hover .anime-overlay {
@@ -349,4 +346,27 @@ body {
 .results-body {
     background: linear-gradient(135deg, #0a0a2a, #000000);
     min-height: 100vh;
+}
+.overlay-buttons {
+    margin-top: auto;
+    display: flex;
+    gap: 8px;
+}
+
+.btn-watched {
+    background: #16a34a;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-want {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
 }
