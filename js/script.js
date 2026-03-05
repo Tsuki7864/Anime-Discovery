@@ -132,9 +132,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const scored = uniqueCandidates.map(anime => {
                 let matchScore = 0;
 
-                anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 1; });
-                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 5; });
-                anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 2; });
+                anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 3; });
+                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 6; });
+                anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 1; });
 
                 return { ...anime, matchScore };
             }).sort((a, b) => b.matchScore - a.matchScore);
