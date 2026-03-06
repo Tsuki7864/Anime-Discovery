@@ -9,20 +9,41 @@ import {
 const BASE_URL = "https://api.jikan.moe/v4";
 
 // A tiny speed bump to prevent the Jikan API from blocking us
+// A tiny speed bump to prevent the Jikan API from blocking us
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function fetchFromJikan(endpoint) {
-    try {
-        const response = await fetch(`${BASE_URL}${endpoint}`);
-        if (!response.ok) throw new Error("API Error");
-        const data = await response.json();
-        return data.data;
-    } catch (error) {
-        console.error(error);
-        return [];
-    }
-}
+// THE NEW BULLETPROOF FETCH
+async function fetchFromJikan(endpoint, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(`${BASE_URL}${endpoint}`);
 
+            // If the API is overwhelmed (429 Rate Limit or 500+ Server Error)
+            if (response.status === 429 || response.status >= 500) {
+                console.warn(`Jikan is overwhelmed (Error ${response.status}). Retrying in ${i + 1} seconds...`);
+                await delay((i + 1) * 1000); // Wait 1s, then 2s, then 3s
+                continue; // Skip the rest of this loop and try the fetch again!
+            }
+
+            // If it's a normal error (like a 404 Not Found), just throw it
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
+            // If we made it here, it was a success!
+            const data = await response.json();
+            return data.data;
+
+        } catch (error) {
+            // If it's the very last try, give up and log the error
+            if (i === retries - 1) {
+                console.error("Max retries reached. The API is totally down:", error);
+                return [];
+            }
+            // Otherwise, wait 1 second and try again (for general network hiccups)
+            await delay(6000);
+        }
+    }
+    return []; // Fallback empty array just in case
+}
 function renderAnimeCards(animeList) {
     const grid = document.querySelector('#anime-grid');
     grid.innerHTML = '';
@@ -106,25 +127,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const baseAnime = searchResults[0];
 
-            const baseTags = [
-                ...(baseAnime.genres || []),
-                ...(baseAnime.themes || []),
-                ...(baseAnime.demographics || [])
-            ].map(tag => tag.mal_id);
+            const baseThemes = (baseAnime.themes || []).map(tag => tag.mal_id);
+            const baseGenres = (baseAnime.genres || []).map(tag => tag.mal_id);
+            const baseDemos = (baseAnime.demographics || []).map(tag => tag.mal_id);
+
+            // Combine them, but Themes go first so the API fetches them first
+            const baseTags = [...baseThemes, ...baseGenres, ...baseDemos];
 
             if (!baseTags.length) {
                 alert("This anime has no tags on MAL to match against!");
                 return;
             }
 
+            // Now, this slice is guaranteed to grab the Isekai/Reincarnation tags first!
             const tagIds = baseTags.slice(0, 3);
 
             let candidates = [];
             for (const tid of tagIds) {
+                // FIX 1: Switched 'score' back to 'members' so Jikan uses its lightning-fast cache!
                 const batch = await fetchFromJikan(`/anime?genres=${tid}&order_by=members&sort=desc&limit=25`);
                 if (batch) candidates = candidates.concat(batch);
 
-                await delay(800);
+                // FIX 2: Bumped the delay from 800ms to 1200ms (1.2 seconds) to be incredibly polite to the API
+                await delay(1200);
             }
 
             const uniqueCandidates = Array.from(new Map(candidates.map(a => [a.mal_id, a])).values());
@@ -153,22 +178,33 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Failsafe: If the hard filter accidentally wipes out every single candidate, 
                 // fall back to the original list so the screen doesn't go blank.
                 if (candidatesToScore.length === 0) {
-                    console.warn(`No candidates matched the bias for ${topFavoriteGenre}. Dropping bias.`);
+                    console.warn(`No candidates matched the b ias for ${topFavoriteGenre}. Dropping bias.`);
                     candidatesToScore = uniqueCandidates;
                 }
+                const dynamicFloor = baseAnime.score ? Math.max(5.0, baseAnime.score - 1.5) : 7.0;
+
+                let candidatesToScore = uniqueCandidates; // (Assuming your Thematical Bias filter is still above this)
+
+                // 4️⃣ Score the candidates based on your 1-5-2 split
+                const scored = candidatesToScore.map(anime => {
+                    let matchScore = 0;
+
+                    anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 1; });
+                    anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 5; });
+                    anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 2; });
+
+                    return { ...anime, matchScore };
+                })
+                    // Apply the dynamic floor
+                    .filter(anime => anime.score && anime.score >= dynamicFloor)
+                    // Multi-tier sort: Match score first, then MAL rating
+                    .sort((a, b) => {
+                        if (b.matchScore !== a.matchScore) {
+                            return b.matchScore - a.matchScore;
+                        }
+                        return b.score - a.score;
+                    });
             }
-
-            // --- NEW: REBALANCED SCORING ---
-            const scored = candidatesToScore.map(anime => {
-                let matchScore = 0;
-
-                anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 1; });
-                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 5; });
-                anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 2; });
-
-                return { ...anime, matchScore };
-            }).sort((a, b) => b.matchScore - a.matchScore);
-
             let exclusions = [];
             try {
                 if (typeof getExcludedIds === 'function') {
