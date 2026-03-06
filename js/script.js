@@ -162,10 +162,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const scored = candidatesToScore.map(anime => {
                 let matchScore = 0;
 
-                // Rebalanced weights: Genres (+2), Themes (+3), Demographics (+1)
-                anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 2; });
-                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 3; });
-                anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 1; });
+                anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 1; });
+                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 5; });
+                anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 2; });
 
                 return { ...anime, matchScore };
             }).sort((a, b) => b.matchScore - a.matchScore);
