@@ -10,7 +10,7 @@
 
 <div class="results-wrapper">
   <div class="results-panel">
-    <h2 class="results-title">Watched</h2>
+    <h2 class="results-title">Watch list</h2>
     <div id="anime-grid"></div>
   </div>
 </div>
@@ -18,3 +18,21 @@
 <script type="module" src="../js/lists.js"></script>
 </body>
 </html>
+<script>
+const want = JSON.parse(localStorage.getItem("wantList")) || [];
+const grid = document.getElementById("anime-grid");
+
+want.forEach(anime => {
+    const card = document.createElement("div");
+    card.className = "anime-card";
+
+    card.innerHTML = `
+        <img src="${anime.image}">
+        <div class="anime-overlay">
+            <h3>${anime.title}</h3>
+        </div>
+    `;
+
+    grid.appendChild(card);
+});
+</script>

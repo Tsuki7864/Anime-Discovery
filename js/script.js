@@ -70,9 +70,9 @@ function renderAnimeCards(animeList) {
                 <p>${description}</p>
 
                 <div class="overlay-buttons">
-                    <button class="btn-watched">Watched</button>
-                    <button class="btn-want">Want</button>
-                </div>
+    <button class="btn-watched" data-id="${anime.mal_id}">Watched</button>
+    <button class="btn-want" data-id="${anime.mal_id}">Want</button>
+</div>
             </div>
         `;
 
@@ -232,4 +232,33 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.style.cursor = "pointer";
         }
     });
+});
+const grid = document.querySelector("#anime-grid");
+
+grid.addEventListener("click", (event) => {
+
+    const watchedBtn = event.target.closest(".btn-watched");
+    const wantBtn = event.target.closest(".btn-want");
+
+    if (!watchedBtn && !wantBtn) return;
+
+    const card = event.target.closest(".anime-card");
+    const title = card.querySelector("h3").innerText;
+    const image = card.querySelector("img").src;
+
+    const animeData = { title, image };
+
+    if (watchedBtn) {
+        const watchedList = JSON.parse(localStorage.getItem("watchedList")) || [];
+        watchedList.push(animeData);
+        localStorage.setItem("watchedList", JSON.stringify(watchedList));
+        watchedBtn.innerText = "Saved ✓";
+    }
+
+    if (wantBtn) {
+        const wantList = JSON.parse(localStorage.getItem("wantList")) || [];
+        wantList.push(animeData);
+        localStorage.setItem("wantList", JSON.stringify(wantList));
+        wantBtn.innerText = "Saved ✓";
+    }
 });
