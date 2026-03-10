@@ -85,6 +85,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const overlay = document.querySelector("#loading-overlay");
     const params = new URLSearchParams(window.location.search);
     const query = params.get("q");
+    document.querySelector("#btn-reset")?.addEventListener("click", () => {
+        if (confirm("Are you sure you want to delete your Watched list and Profile scores?")) {
+            localStorage.clear(); // Wipes the slate clean
+            alert("Memory wiped. You are a blank slate!");
+            window.location.reload(); // Refreshes the page to apply changes
+        }
+    });
 
     // Initial search on page load
     if (query) {
@@ -133,14 +140,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Combine them, but Themes go first so the API fetches them first
             const baseTags = [...baseThemes, ...baseGenres, ...baseDemos];
-            const tagIds = baseTags.slice(0, 3);
-            const cleanTagIds = tagIds.filter(id => id != null);
-            const tagIdString = cleanTagIds.join(',');
+            const primaryTag = baseTags.length > 0 ? baseTags[0] : null;
 
-            console.log("1. Requesting tags:", tagIdString);
+            let uniqueCandidates = [];
 
-            const response = await fetchFromJikan(`/anime?genres=${tagIdString}&order_by=members&sort=desc&limit=75`);
-            const uniqueCandidates = response || [];
+            if (primaryTag) {
+                console.log(`1. Requesting primary tag: ${primaryTag} to cast a wide net`);
+
+                // Fetch 75 popular shows from that one main genre
+                const response = await fetchFromJikan(`/anime?genres=${primaryTag}&order_by=members&sort=desc&limit=75`);
+                uniqueCandidates = response || [];
+            }
+
             console.log("2. API returned candidates:", uniqueCandidates.length);
 
             // --- BIAS CHECK ---
@@ -205,7 +216,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.style.cursor = "pointer";
         }
     });
-    const grid = document.querySelector("#anime-grid");
 
     grid.addEventListener("click", (event) => {
 
