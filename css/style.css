@@ -402,4 +402,17 @@ body {
     padding: 6px 10px;
     border-radius: 6px;
     cursor: pointer;
+}.remove-btn {
+    margin-top: auto;
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.remove-btn:hover {
+    background: #b91c1c;
 }
