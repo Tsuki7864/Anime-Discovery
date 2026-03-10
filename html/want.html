@@ -3,36 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Watched</title>
+  <title>Want to Watch</title>
   <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body class="results-body">
 
 <div class="results-wrapper">
   <div class="results-panel">
-    <h2 class="results-title">Watch list</h2>
+    <h2 class="results-title">Want to Watch</h2>
     <div id="anime-grid"></div>
   </div>
 </div>
 
-<script type="module" src="../js/lists.js"></script>
-</body>
-</html>
 <script>
-const want = JSON.parse(localStorage.getItem("wantList")) || [];
+let want = JSON.parse(localStorage.getItem("wantList")) || [];
 const grid = document.getElementById("anime-grid");
 
-want.forEach(anime => {
-    const card = document.createElement("div");
-    card.className = "anime-card";
+function renderWant() {
+    grid.innerHTML = "";
 
-    card.innerHTML = `
-        <img src="${anime.image}">
-        <div class="anime-overlay">
-            <h3>${anime.title}</h3>
-        </div>
-    `;
+    if (!want.length) {
+        grid.innerHTML = "<p style='color:white;'>No anime saved yet.</p>";
+        return;
+    }
 
-    grid.appendChild(card);
+    want.forEach(anime => {
+        const card = document.createElement("div");
+        card.className = "anime-card";
+
+        card.innerHTML = `
+            <img src="${anime.image}" alt="${anime.title}">
+            <div class="anime-overlay" style="opacity:1;">
+                <h3>${anime.title}</h3>
+                <button class="remove-btn" data-id="${anime.malId || ""}" data-title="${anime.title}">Remove</button>
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+}
+
+grid.addEventListener("click", (event) => {
+    const removeBtn = event.target.closest(".remove-btn");
+    if (!removeBtn) return;
+
+    const rawId = removeBtn.dataset.id;
+    const title = removeBtn.dataset.title;
+
+    if (rawId) {
+        const malId = Number(rawId);
+        want = want.filter(anime => anime.malId !== malId);
+    } else {
+        want = want.filter(anime => anime.title !== title);
+    }
+
+    localStorage.setItem("wantList", JSON.stringify(want));
+    renderWant();
 });
+
+renderWant();
 </script>
+
+</body>
+</html>

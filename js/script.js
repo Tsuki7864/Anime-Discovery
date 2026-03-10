@@ -205,7 +205,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.style.cursor = "pointer";
         }
     });
-    const grid = document.querySelector("#anime-grid");
+        const grid = document.querySelector("#anime-grid");
 
     grid.addEventListener("click", (event) => {
 
@@ -217,21 +217,36 @@ document.addEventListener("DOMContentLoaded", async () => {
         const card = event.target.closest(".anime-card");
         const title = card.querySelector("h3").innerText;
         const image = card.querySelector("img").src;
+        const malId = Number((watchedBtn || wantBtn).dataset.id);
 
-        const animeData = { title, image };
+        const animeData = { malId, title, image };
 
         if (watchedBtn) {
             const watchedList = JSON.parse(localStorage.getItem("watchedList")) || [];
-            watchedList.push(animeData);
-            localStorage.setItem("watchedList", JSON.stringify(watchedList));
-            watchedBtn.innerText = "Saved ✓";
+
+            const alreadySaved = watchedList.some(anime => anime.malId === malId);
+
+            if (!alreadySaved) {
+                watchedList.push(animeData);
+                localStorage.setItem("watchedList", JSON.stringify(watchedList));
+                watchedBtn.innerText = "Saved ✓";
+            } else {
+                watchedBtn.innerText = "Already Saved";
+            }
         }
 
         if (wantBtn) {
             const wantList = JSON.parse(localStorage.getItem("wantList")) || [];
-            wantList.push(animeData);
-            localStorage.setItem("wantList", JSON.stringify(wantList));
-            wantBtn.innerText = "Saved ✓";
+
+            const alreadySaved = wantList.some(anime => anime.malId === malId);
+
+            if (!alreadySaved) {
+                wantList.push(animeData);
+                localStorage.setItem("wantList", JSON.stringify(wantList));
+                wantBtn.innerText = "Saved ✓";
+            } else {
+                wantBtn.innerText = "Already Saved";
+            }
         }
     });
 });
