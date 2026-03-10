@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.log(`1. Requesting primary tag: ${primaryTag} to cast a wide net`);
 
                 // Fetch 75 popular shows from that one main genre
-                const response = await fetchFromJikan(`/anime?genres=${primaryTag}&order_by=members&sort=desc&limit=75`);
+                const response = await fetchFromJikan(`/anime?genres=${primaryTag}&order_by=members&sort=desc&limit=25`);
                 uniqueCandidates = response || [];
             }
 
@@ -216,10 +216,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.style.cursor = "pointer";
         }
     });
-<<<<<<< HEAD
-=======
-        const grid = document.querySelector("#anime-grid");
->>>>>>> 2655611147736802f977431ca17d94c46b44d832
 
     grid.addEventListener("click", (event) => {
 
