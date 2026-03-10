@@ -217,7 +217,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    grid.addEventListener("click", (event) => {
+    });
+
+
+            const grid = document.querySelector("#anime-grid");
+
+    grid?.addEventListener("click", (event) => {
 
         const watchedBtn = event.target.closest(".btn-watched");
         const wantBtn = event.target.closest(".btn-want");
@@ -234,7 +239,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (watchedBtn) {
             const watchedList = JSON.parse(localStorage.getItem("watchedList")) || [];
 
-            const alreadySaved = watchedList.some(anime => anime.malId === malId);
+            const alreadySaved = watchedList.some(a => a.malId === malId);
 
             if (!alreadySaved) {
                 watchedList.push(animeData);
@@ -248,7 +253,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (wantBtn) {
             const wantList = JSON.parse(localStorage.getItem("wantList")) || [];
 
-            const alreadySaved = wantList.some(anime => anime.malId === malId);
+            const alreadySaved = wantList.some(a => a.malId === malId);
 
             if (!alreadySaved) {
                 wantList.push(animeData);
@@ -258,5 +263,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 wantBtn.innerText = "Already Saved";
             }
         }
+
     });
-});
+
+
