@@ -85,6 +85,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const overlay = document.querySelector("#loading-overlay");
     const params = new URLSearchParams(window.location.search);
     const query = params.get("q");
+    document.querySelector("#btn-reset")?.addEventListener("click", () => {
+        if (confirm("Are you sure you want to delete your Watched list and Profile scores?")) {
+            localStorage.clear(); // Wipes the slate clean
+            alert("Memory wiped. You are a blank slate!");
+            window.location.reload(); // Refreshes the page to apply changes
+        }
+    });
 
     // Initial search on page load
     if (query) {
@@ -133,33 +140,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Combine them, but Themes go first so the API fetches them first
             const baseTags = [...baseThemes, ...baseGenres, ...baseDemos];
+            const primaryTag = baseTags.length > 0 ? baseTags[0] : null;
 
-            if (!baseTags.length) {
-                alert("This anime has no tags on MAL to match against!");
-                return;
+            let uniqueCandidates = [];
+
+            if (primaryTag) {
+                console.log(`1. Requesting primary tag: ${primaryTag} to cast a wide net`);
+
+                // Fetch 75 popular shows from that one main genre
+                const response = await fetchFromJikan(`/anime?genres=${primaryTag}&order_by=members&sort=desc&limit=25`);
+                uniqueCandidates = response || [];
             }
 
-            // Now, this slice is guaranteed to grab the Isekai/Reincarnation tags first!
-            const tagIds = baseTags.slice(0, 3);
+            console.log("2. API returned candidates:", uniqueCandidates.length);
 
-            let candidates = [];
-            for (const tid of tagIds) {
-                // FIX 1: Switched 'score' back to 'members' so Jikan uses its lightning-fast cache!
-                const batch = await fetchFromJikan(`/anime?genres=${tid}&order_by=members&sort=desc&limit=25`);
-                if (batch) candidates = candidates.concat(batch);
+            // --- BIAS CHECK ---
+            let candidatesToScore = uniqueCandidates;
 
-                // FIX 2: Bumped the delay from 800ms to 1200ms (1.2 seconds) to be incredibly polite to the API
-                await delay(1200);
-            }
-
-            const uniqueCandidates = Array.from(new Map(candidates.map(a => [a.mal_id, a])).values());
-
-            // --- NEW: THEMATICAL BIAS (HARD FILTER) ---
             const userPrefs = getGenrePreferences() || {};
             let topFavoriteGenre = null;
             let highestPrefScore = 0;
 
-            // Find the genre with the highest score in their profile
+            // 2. Find the genre with the highest score
             for (const [genreName, score] of Object.entries(userPrefs)) {
                 if (score > highestPrefScore) {
                     highestPrefScore = score;
@@ -167,59 +169,41 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            let candidatesToScore = uniqueCandidates;
-
-            // If they clearly love a genre (e.g., score >= 3), force it to be in the results!
+            // This is the "New" If Statement
             if (topFavoriteGenre && highestPrefScore >= 3) {
-                candidatesToScore = uniqueCandidates.filter(anime => {
+                const biasedResults = uniqueCandidates.filter(anime => {
                     return anime.genres?.some(g => g.name === topFavoriteGenre);
                 });
 
-                // Failsafe: If the hard filter accidentally wipes out every single candidate, 
-                // fall back to the original list so the screen doesn't go blank.
-                if (candidatesToScore.length === 0) {
-                    console.warn(`No candidates matched the b ias for ${topFavoriteGenre}. Dropping bias.`);
-                    candidatesToScore = uniqueCandidates;
+                // Only apply the filter if it doesn't leave us with 0 results
+                if (biasedResults.length > 0) {
+                    candidatesToScore = biasedResults;
                 }
-                const dynamicFloor = baseAnime.score ? Math.max(5.0, baseAnime.score - 1.5) : 7.0;
-
-                let candidatesToScore = uniqueCandidates; // (Assuming your Thematical Bias filter is still above this)
-
-                // 4️⃣ Score the candidates based on your 1-5-2 split
-                const scored = candidatesToScore.map(anime => {
-                    let matchScore = 0;
-
-                    anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 1; });
-                    anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 5; });
-                    anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 2; });
-
-                    return { ...anime, matchScore };
-                })
-                    // Apply the dynamic floor
-                    .filter(anime => anime.score && anime.score >= dynamicFloor)
-                    // Multi-tier sort: Match score first, then MAL rating
-                    .sort((a, b) => {
-                        if (b.matchScore !== a.matchScore) {
-                            return b.matchScore - a.matchScore;
-                        }
-                        return b.score - a.score;
-                    });
             }
-            let exclusions = [];
-            try {
-                if (typeof getExcludedIds === 'function') {
-                    exclusions = getExcludedIds() || [];
-                }
-            } catch (e) { console.warn("Exclusions skipped."); }
+            console.log("3. Candidates after Bias Filter:", candidatesToScore.length);
 
-            const filtered = scored
+            // --- THE SCORING FUNNEL ---
+            const dynamicFloor = baseAnime.score ? Math.max(5.0, baseAnime.score - 2.5) : 5.0;
+            console.log("4. Using Rating Floor:", dynamicFloor);
+
+            const scored = candidatesToScore.map(anime => {
+                let matchScore = 0;
+                anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 1; });
+                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 5; });
+                anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 2; });
+                return { ...anime, matchScore };
+            });
+
+            const afterFloor = scored.filter(anime => anime.score && anime.score >= dynamicFloor);
+            console.log("5. Candidates above Rating Floor:", afterFloor.length);
+
+            const finalResults = afterFloor
                 .filter(a => a.mal_id !== baseAnime.mal_id)
-                .filter(a => !exclusions.includes(a.mal_id))
-                .filter(a => a.matchScore > 0);
+                .filter(a => a.matchScore > 0); // This is the final gate
 
-            console.table(filtered.map(a => ({ Title: a.title, Score: a.matchScore })).slice(0, 15));
+            console.log("6. Final results to display:", finalResults.length);
 
-            renderAnimeCards(filtered.slice(0, 15));
+            renderAnimeCards(finalResults.slice(0, 15));
 
         } catch (error) {
             console.error("Suggestion Engine Error:", error);
@@ -232,33 +216,54 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.style.cursor = "pointer";
         }
     });
-});
-const grid = document.querySelector("#anime-grid");
 
-grid.addEventListener("click", (event) => {
+    });
 
-    const watchedBtn = event.target.closest(".btn-watched");
-    const wantBtn = event.target.closest(".btn-want");
 
-    if (!watchedBtn && !wantBtn) return;
+            const grid = document.querySelector("#anime-grid");
 
-    const card = event.target.closest(".anime-card");
-    const title = card.querySelector("h3").innerText;
-    const image = card.querySelector("img").src;
+    grid?.addEventListener("click", (event) => {
 
-    const animeData = { title, image };
+        const watchedBtn = event.target.closest(".btn-watched");
+        const wantBtn = event.target.closest(".btn-want");
 
-    if (watchedBtn) {
-        const watchedList = JSON.parse(localStorage.getItem("watchedList")) || [];
-        watchedList.push(animeData);
-        localStorage.setItem("watchedList", JSON.stringify(watchedList));
-        watchedBtn.innerText = "Saved ✓";
-    }
+        if (!watchedBtn && !wantBtn) return;
 
-    if (wantBtn) {
-        const wantList = JSON.parse(localStorage.getItem("wantList")) || [];
-        wantList.push(animeData);
-        localStorage.setItem("wantList", JSON.stringify(wantList));
-        wantBtn.innerText = "Saved ✓";
-    }
-});
+        const card = event.target.closest(".anime-card");
+        const title = card.querySelector("h3").innerText;
+        const image = card.querySelector("img").src;
+        const malId = Number((watchedBtn || wantBtn).dataset.id);
+
+        const animeData = { malId, title, image };
+
+        if (watchedBtn) {
+            const watchedList = JSON.parse(localStorage.getItem("watchedList")) || [];
+
+            const alreadySaved = watchedList.some(a => a.malId === malId);
+
+            if (!alreadySaved) {
+                watchedList.push(animeData);
+                localStorage.setItem("watchedList", JSON.stringify(watchedList));
+                watchedBtn.innerText = "Saved ✓";
+            } else {
+                watchedBtn.innerText = "Already Saved";
+            }
+        }
+
+        if (wantBtn) {
+            const wantList = JSON.parse(localStorage.getItem("wantList")) || [];
+
+            const alreadySaved = wantList.some(a => a.malId === malId);
+
+            if (!alreadySaved) {
+                wantList.push(animeData);
+                localStorage.setItem("wantList", JSON.stringify(wantList));
+                wantBtn.innerText = "Saved ✓";
+            } else {
+                wantBtn.innerText = "Already Saved";
+            }
+        }
+
+    });
+
+
