@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Initial search on page load
     if (query) {
         if (overlay) overlay.style.display = "flex";
-        const results = await fetchFromJikan(`/anime?q=${query}&limit=12`);
+        const results = await fetchFromJikan(`/anime?q=${query}&limit=25`);
         renderAnimeCards(results);
         if (overlay) overlay.style.display = "none";
     }
@@ -104,16 +104,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const suggestBtn = document.querySelector("#btn-suggest");
 
     // FIXED: Only one event listener, and 'event' is properly passed in!
+    // FIXED: Only one event listener, and 'event' is properly passed in!
     suggestBtn?.addEventListener("click", async (event) => {
-
-        // --- STEP 1: THE BUTTON LOCK ---
+        // --- [CHANGE 1: BUTTON UI LOCK] ---
         const btn = event.currentTarget;
         if (btn.disabled) return;
-
         btn.disabled = true;
-        btn.innerText = "Calculating...";
-        btn.style.opacity = "0.7";
-        btn.style.cursor = "not-allowed";
+        btn.innerText = "Analyzing...";
 
         if (overlay) overlay.style.display = "flex";
 
@@ -126,94 +123,118 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            const searchResults = await fetchFromJikan(`/anime?q=${query}&limit=1`);
+            // --- [CHANGE 2: SEARCH LIMIT] ---
+            const searchResults = await fetchFromJikan(`/anime?q=${query}&limit=25`);
+
             if (!searchResults || !searchResults.length) {
                 alert("Anime not found.");
                 return;
             }
 
+            // --- [CHANGE 3: SELECTING THE BASE] ---
             const baseAnime = searchResults[0];
 
-            const baseThemes = (baseAnime.themes || []).map(tag => tag.mal_id);
+            // --- [CHANGE 4: GENRE-FIRST TAG PREP] ---
             const baseGenres = (baseAnime.genres || []).map(tag => tag.mal_id);
+            const baseThemes = (baseAnime.themes || []).map(tag => tag.mal_id);
             const baseDemos = (baseAnime.demographics || []).map(tag => tag.mal_id);
 
-            // Combine them, but Themes go first so the API fetches them first
-            const baseTags = [...baseThemes, ...baseGenres, ...baseDemos];
-            const primaryTag = baseTags.length > 0 ? baseTags[0] : null;
+            const mainTags = [
+                (baseGenres[0] || null),
+                (baseThemes[0] || null),
+                (baseDemos[0] || baseGenres[1] || null)
+            ].filter(id => id !== null);
 
             let uniqueCandidates = [];
 
-            if (primaryTag) {
-                console.log(`1. Requesting primary tag: ${primaryTag} to cast a wide net`);
+            // --- [CHANGE 5: MULTI-PAIR SNIPER FETCH] ---
+            if (mainTags.length >= 2) {
+                const pairs = [
+                    [mainTags[0], mainTags[1]].join(','),
+                    [mainTags[0], mainTags[2]].filter(id => id).join(','),
+                    [mainTags[1], mainTags[2]].filter(id => id).join(',')
+                ].filter(p => p.includes(','));
 
-                // Fetch 75 popular shows from that one main genre
-                const response = await fetchFromJikan(`/anime?genres=${primaryTag}&order_by=members&sort=desc&limit=25`);
-                uniqueCandidates = response || [];
-            }
+                const resultsArray = await Promise.all(pairs.map(p =>
+                    fetchFromJikan(`/anime?genres=${p}&order_by=members&sort=desc&limit=15`)
+                ));
 
-            console.log("2. API returned candidates:", uniqueCandidates.length);
-
-            // --- BIAS CHECK ---
-            let candidatesToScore = uniqueCandidates;
-
-            const userPrefs = getGenrePreferences() || {};
-            let topFavoriteGenre = null;
-            let highestPrefScore = 0;
-
-            // 2. Find the genre with the highest score
-            for (const [genreName, score] of Object.entries(userPrefs)) {
-                if (score > highestPrefScore) {
-                    highestPrefScore = score;
-                    topFavoriteGenre = genreName;
-                }
-            }
-
-            // This is the "New" If Statement
-            if (topFavoriteGenre && highestPrefScore >= 3) {
-                const biasedResults = uniqueCandidates.filter(anime => {
-                    return anime.genres?.some(g => g.name === topFavoriteGenre);
+                const seenIds = new Set();
+                uniqueCandidates = resultsArray.flat().filter(a => {
+                    if (seenIds.has(a.mal_id)) return false;
+                    seenIds.add(a.mal_id);
+                    return true;
                 });
-
-                // Only apply the filter if it doesn't leave us with 0 results
-                if (biasedResults.length > 0) {
-                    candidatesToScore = biasedResults;
-                }
             }
-            console.log("3. Candidates after Bias Filter:", candidatesToScore.length);
 
-            // --- THE SCORING FUNNEL ---
-            const dynamicFloor = baseAnime.score ? Math.max(5.0, baseAnime.score - 2.5) : 5.0;
-            console.log("4. Using Rating Floor:", dynamicFloor);
+            const baseTags = [...baseThemes, ...baseGenres, ...baseDemos];
+            const candidatesToScore = uniqueCandidates;
 
+            // 2. THE CONFLICT MAP: Define which vibes cannot coexist
+            const toneConflicts = {
+                'Comedy': ['Gore', 'Dark Fantasy', 'Suspense', 'Horror', 'Psychological'],
+                'Slice of Life': ['Gore', 'Military', 'High Stakes', 'Survival', 'Psychological'],
+                'Kids': ['Gore', 'Horror', 'Erotica', 'Psychological'],
+                'Iyashikei': ['Gore', 'Horror', 'Suspense']
+            };
+
+            // 3. Build the dynamic list of banned tags for THIS specific search
+            let bannedTags = [];
+            baseAnime.genres?.forEach(g => {
+                if (toneConflicts[g.name]) {
+                    bannedTags = bannedTags.concat(toneConflicts[g.name]);
+                }
+            });
+
+            // 4. Setup the Franchise Filter base variable
+            const baseFranchiseName = baseAnime.title.split(/[:\-]/)[0].trim().toLowerCase();
+
+            // --- [CHANGE 6: WEIGHTED SCORING & 7.5 FLOOR] ---
+            const dynamicFloor = 7.5;
+
+            // 5. Map and Score
             const scored = candidatesToScore.map(anime => {
                 let matchScore = 0;
-                anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 1; });
-                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 5; });
+
+                anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 10; });
+                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 15; });
                 anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 2; });
+
+                // THE NEW DYNAMIC VIBE CHECK
+                if (bannedTags.length > 0) {
+                    const hasConflict = anime.genres?.some(g => bannedTags.includes(g.name)) ||
+                        anime.themes?.some(t => bannedTags.includes(t.name));
+
+                    if (hasConflict) {
+                        matchScore = 0; // Instantly nuke ANY conflicting vibe!
+                    }
+                }
+
                 return { ...anime, matchScore };
             });
 
-            const afterFloor = scored.filter(anime => anime.score && anime.score >= dynamicFloor);
-            console.log("5. Candidates above Rating Floor:", afterFloor.length);
-
-            const finalResults = afterFloor
+            // --- [CHANGE 7: FINAL DISPLAY LIMIT & FRANCHISE FILTER] ---
+            const finalResults = scored
                 .filter(a => a.mal_id !== baseAnime.mal_id)
-                .filter(a => a.matchScore > 0); // This is the final gate
+                .filter(a => a.score && a.score >= dynamicFloor)
+                .filter(anime => {
+                    // The Smart Franchise Split
+                    const candidateFranchiseName = anime.title.split(/[:\-]/)[0].trim().toLowerCase();
+                    return !candidateFranchiseName.includes(baseFranchiseName) &&
+                        !baseFranchiseName.includes(candidateFranchiseName);
+                })
+                .filter(a => a.matchScore > 0) // Drop the nuked scores!
+                .sort((a, b) => b.matchScore - a.matchScore);
 
-            console.log("6. Final results to display:", finalResults.length);
-
+            // Show the top 15 ultra-relevant results
             renderAnimeCards(finalResults.slice(0, 15));
 
         } catch (error) {
-            console.error("Suggestion Engine Error:", error);
-            alert("The API got a bit overwhelmed! Try clicking suggest again in a few seconds.");
+            console.error("Engine Error:", error);
         } finally {
             if (overlay) overlay.style.display = "none";
             btn.disabled = false;
-            btn.innerText = "Suggest";
-            btn.style.opacity = "1";
-            btn.style.cursor = "pointer";
+            btn.innerText = "Smart Recommendations";
         }
     });
 
