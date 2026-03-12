@@ -9,7 +9,6 @@ import {
 const BASE_URL = "https://api.jikan.moe/v4";
 
 // A tiny speed bump to prevent the Jikan API from blocking us
-// A tiny speed bump to prevent the Jikan API from blocking us
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // THE NEW BULLETPROOF FETCH
@@ -30,7 +29,7 @@ async function fetchFromJikan(endpoint, retries = 3) {
 
             // If we made it here, it was a success!
             const data = await response.json();
-            return data.data;
+            return data.data || []; // FIXED: Ensure it always returns an array, NEVER undefined!
 
         } catch (error) {
             // If it's the very last try, give up and log the error
@@ -125,13 +124,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            // --- [CHANGE 2: SEARCH LIMIT] ---
-            const searchResults = await fetchFromJikan(`/anime?q=${query}&limit=25`);
+            // --- [CHANGE 2: SEARCH LIMIT & DEDUPLICATION] ---
+            let searchResults = await fetchFromJikan(`/anime?q=${query}&limit=25`);
 
             if (!searchResults || !searchResults.length) {
                 alert("Anime not found.");
                 return;
             }
+
+            // Clean up the API's messy duplicates (Fixes Tensura showing up twice)
+            const seenSearchTitles = new Set();
+            searchResults = searchResults.filter(anime => {
+                const title = anime.title.toLowerCase();
+                if (seenSearchTitles.has(title)) return false;
+                seenSearchTitles.add(title);
+                return true;
+            });
 
             // --- [CHANGE 3: SELECTING THE BASE] ---
             const baseAnime = searchResults[0];
@@ -147,32 +155,33 @@ document.addEventListener("DOMContentLoaded", async () => {
                 (baseDemos[0] || baseGenres[1] || null)
             ].filter(id => id !== null);
 
+            // Instead of making multiple requests and risking a 429 ban, we make ONE request.
             let uniqueCandidates = [];
 
-            // --- [CHANGE 5: MULTI-PAIR SNIPER FETCH] ---
-            if (mainTags.length >= 2) {
-                const pairs = [
-                    [mainTags[0], mainTags[1]].join(','),
-                    [mainTags[0], mainTags[2]].filter(id => id).join(','),
-                    [mainTags[1], mainTags[2]].filter(id => id).join(',')
-                ].filter(p => p.includes(','));
+            if (mainTags.length > 0) {
+                // Grab just the top 1 or 2 most important tags to cast a strong, single net
+                const queryTags = mainTags.slice(0, 2).join(',');
 
-                const resultsArray = await Promise.all(pairs.map(p =>
-                    fetchFromJikan(`/anime?genres=${p}&order_by=members&sort=desc&limit=15`)
-                ));
+                // Give Jikan a solid 1.5-second breather after the initial search
+                await delay(1500);
 
-                const seenIds = new Set();
-                uniqueCandidates = resultsArray.flat().filter(a => {
-                    if (seenIds.has(a.mal_id)) return false;
-                    seenIds.add(a.mal_id);
-                    return true;
-                });
+                // Fetch up to 50 shows in one single burst!
+                const res = await fetchFromJikan(`/anime?genres=${queryTags}&order_by=members&sort=desc&limit=50`);
+
+                if (res && Array.isArray(res)) {
+                    const seenIds = new Set();
+                    uniqueCandidates = res.filter(a => {
+                        if (!a || !a.mal_id) return false;
+                        if (seenIds.has(a.mal_id)) return false;
+                        seenIds.add(a.mal_id);
+                        return true;
+                    });
+                }
             }
 
             const baseTags = [...baseThemes, ...baseGenres, ...baseDemos];
             const candidatesToScore = uniqueCandidates;
 
-            // 2. THE CONFLICT MAP: Define which vibes cannot coexist
             const toneConflicts = {
                 'Comedy': ['Gore', 'Dark Fantasy', 'Suspense', 'Horror', 'Psychological'],
                 'Slice of Life': ['Gore', 'Military', 'High Stakes', 'Survival', 'Psychological'],
@@ -180,7 +189,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 'Iyashikei': ['Gore', 'Horror', 'Suspense']
             };
 
-            // 3. Build the dynamic list of banned tags for THIS specific search
             let bannedTags = [];
             baseAnime.genres?.forEach(g => {
                 if (toneConflicts[g.name]) {
@@ -188,73 +196,59 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             });
 
-            // 4. Setup the Franchise Filter base variable
-            const baseFranchiseName = baseAnime.title.split(/[:\-]/)[0].trim().toLowerCase();
-
-            // --- [CHANGE 6: WEIGHTED SCORING & 7.5 FLOOR] ---
             const dynamicFloor = 7.5;
 
-            // 5. Map and Score
+            // --- [CHANGE 6: THEME-HEAVY SCORING] ---
             const scored = candidatesToScore.map(anime => {
                 let matchScore = 0;
 
                 anime.genres?.forEach(g => { if (baseTags.includes(g.mal_id)) matchScore += 10; });
-                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 15; });
-                anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 2; });
+                anime.themes?.forEach(t => { if (baseTags.includes(t.mal_id)) matchScore += 30; });
+                anime.demographics?.forEach(d => { if (baseTags.includes(d.mal_id)) matchScore += 5; });
 
-                // THE NEW DYNAMIC VIBE CHECK
                 if (bannedTags.length > 0) {
                     const hasConflict = anime.genres?.some(g => bannedTags.includes(g.name)) ||
                         anime.themes?.some(t => bannedTags.includes(t.name));
-
-                    if (hasConflict) {
-                        matchScore = 0; // Instantly nuke ANY conflicting vibe!
-                    }
+                    if (hasConflict) matchScore = -999;
                 }
 
                 return { ...anime, matchScore };
             });
 
-// --- [CHANGE 7: FINAL DISPLAY LIMIT & FRANCHISE FILTER] ---
-
-            // HELPER: Aggressively trims titles to find the true "root" franchise word
+            // --- [CHANGE 7: FINAL DISPLAY LIMIT & FRANCHISE FILTER] ---
             const getRootFranchise = (title) => {
+                if (!title) return "";
                 let root = title.split(/[:\-]/)[0].toLowerCase().trim();
-                // Strip out "season", "part", numbers, and roman numerals at the end
                 root = root.replace(/\s+(season|part|chapter|cour|tv|the movie)\b.*/g, '');
                 root = root.replace(/\s+(ii|iii|iv|v|vi|vii|viii|ix|x|\d+)$/g, '');
                 return root.trim();
             };
 
             const rootBaseFranchise = getRootFranchise(baseAnime.title);
-            const seenFranchises = new Set(); 
+            const seenFranchises = new Set();
 
             const finalResults = scored
-                .filter(a => a.mal_id !== baseAnime.mal_id)
+                .filter(a => a && a.mal_id && a.mal_id !== baseAnime.mal_id)
                 .filter(a => a.score && a.score >= dynamicFloor)
-                .filter(a => a.matchScore >= 15) // THE VELVET ROPE: Must share at least TWO tags to survive!
-                .sort((a, b) => b.matchScore - a.matchScore) 
+                .filter(a => a.matchScore >= 10)
+                .sort((a, b) => {
+                    // YOUR IDEA: Primary Sort by Match Score
+                    if (b.matchScore !== a.matchScore) {
+                        return b.matchScore - a.matchScore;
+                    }
+                    // YOUR IDEA: Secondary Sort by MAL Rating for tie-breakers!
+                    return (b.score || 0) - (a.score || 0);
+                })
                 .filter(anime => {
                     const candidateRoot = getRootFranchise(anime.title);
-                    
-                    // 1. Is it the exact same root franchise as the base anime? Drop it.
-                    if (candidateRoot.includes(rootBaseFranchise) || rootBaseFranchise.includes(candidateRoot)) {
-                        return false;
-                    }
+                    if (candidateRoot.includes(rootBaseFranchise) || rootBaseFranchise.includes(candidateRoot)) return false;
+                    if (seenFranchises.has(candidateRoot)) return false;
 
-                    // 2. Have we already suggested a different season of this candidate? Drop it.
-                    if (seenFranchises.has(candidateRoot)) {
-                        return false; 
-                    }
-
-                    // If it survived, add the root to our tracking list and approve it!
                     seenFranchises.add(candidateRoot);
                     return true;
                 });
 
-            // Show the top results (Adjust the slice number however you want to test!)
             renderAnimeCards(finalResults.slice(0, 20));
-
         } catch (error) {
             console.error("Engine Error:", error);
         } finally {
