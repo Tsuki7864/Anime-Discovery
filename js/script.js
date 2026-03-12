@@ -213,21 +213,45 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return { ...anime, matchScore };
             });
 
-            // --- [CHANGE 7: FINAL DISPLAY LIMIT & FRANCHISE FILTER] ---
+// --- [CHANGE 7: FINAL DISPLAY LIMIT & FRANCHISE FILTER] ---
+
+            // HELPER: Aggressively trims titles to find the true "root" franchise word
+            const getRootFranchise = (title) => {
+                let root = title.split(/[:\-]/)[0].toLowerCase().trim();
+                // Strip out "season", "part", numbers, and roman numerals at the end
+                root = root.replace(/\s+(season|part|chapter|cour|tv|the movie)\b.*/g, '');
+                root = root.replace(/\s+(ii|iii|iv|v|vi|vii|viii|ix|x|\d+)$/g, '');
+                return root.trim();
+            };
+
+            const rootBaseFranchise = getRootFranchise(baseAnime.title);
+            const seenFranchises = new Set(); 
+
             const finalResults = scored
                 .filter(a => a.mal_id !== baseAnime.mal_id)
                 .filter(a => a.score && a.score >= dynamicFloor)
+                .filter(a => a.matchScore >= 15) // THE VELVET ROPE: Must share at least TWO tags to survive!
+                .sort((a, b) => b.matchScore - a.matchScore) 
                 .filter(anime => {
-                    // The Smart Franchise Split
-                    const candidateFranchiseName = anime.title.split(/[:\-]/)[0].trim().toLowerCase();
-                    return !candidateFranchiseName.includes(baseFranchiseName) &&
-                        !baseFranchiseName.includes(candidateFranchiseName);
-                })
-                .filter(a => a.matchScore > 0) // Drop the nuked scores!
-                .sort((a, b) => b.matchScore - a.matchScore);
+                    const candidateRoot = getRootFranchise(anime.title);
+                    
+                    // 1. Is it the exact same root franchise as the base anime? Drop it.
+                    if (candidateRoot.includes(rootBaseFranchise) || rootBaseFranchise.includes(candidateRoot)) {
+                        return false;
+                    }
 
-            // Show the top 15 ultra-relevant results
-            renderAnimeCards(finalResults.slice(0, 15));
+                    // 2. Have we already suggested a different season of this candidate? Drop it.
+                    if (seenFranchises.has(candidateRoot)) {
+                        return false; 
+                    }
+
+                    // If it survived, add the root to our tracking list and approve it!
+                    seenFranchises.add(candidateRoot);
+                    return true;
+                });
+
+            // Show the top results (Adjust the slice number however you want to test!)
+            renderAnimeCards(finalResults.slice(0, 20));
 
         } catch (error) {
             console.error("Engine Error:", error);
@@ -238,53 +262,53 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    });
+});
 
 
-            const grid = document.querySelector("#anime-grid");
+const grid = document.querySelector("#anime-grid");
 
-    grid?.addEventListener("click", (event) => {
+grid?.addEventListener("click", (event) => {
 
-        const watchedBtn = event.target.closest(".btn-watched");
-        const wantBtn = event.target.closest(".btn-want");
+    const watchedBtn = event.target.closest(".btn-watched");
+    const wantBtn = event.target.closest(".btn-want");
 
-        if (!watchedBtn && !wantBtn) return;
+    if (!watchedBtn && !wantBtn) return;
 
-        const card = event.target.closest(".anime-card");
-        const title = card.querySelector("h3").innerText;
-        const image = card.querySelector("img").src;
-        const malId = Number((watchedBtn || wantBtn).dataset.id);
+    const card = event.target.closest(".anime-card");
+    const title = card.querySelector("h3").innerText;
+    const image = card.querySelector("img").src;
+    const malId = Number((watchedBtn || wantBtn).dataset.id);
 
-        const animeData = { malId, title, image };
+    const animeData = { malId, title, image };
 
-        if (watchedBtn) {
-            const watchedList = JSON.parse(localStorage.getItem("watchedList")) || [];
+    if (watchedBtn) {
+        const watchedList = JSON.parse(localStorage.getItem("watchedList")) || [];
 
-            const alreadySaved = watchedList.some(a => a.malId === malId);
+        const alreadySaved = watchedList.some(a => a.malId === malId);
 
-            if (!alreadySaved) {
-                watchedList.push(animeData);
-                localStorage.setItem("watchedList", JSON.stringify(watchedList));
-                watchedBtn.innerText = "Saved ✓";
-            } else {
-                watchedBtn.innerText = "Already Saved";
-            }
+        if (!alreadySaved) {
+            watchedList.push(animeData);
+            localStorage.setItem("watchedList", JSON.stringify(watchedList));
+            watchedBtn.innerText = "Saved ✓";
+        } else {
+            watchedBtn.innerText = "Already Saved";
         }
+    }
 
-        if (wantBtn) {
-            const wantList = JSON.parse(localStorage.getItem("wantList")) || [];
+    if (wantBtn) {
+        const wantList = JSON.parse(localStorage.getItem("wantList")) || [];
 
-            const alreadySaved = wantList.some(a => a.malId === malId);
+        const alreadySaved = wantList.some(a => a.malId === malId);
 
-            if (!alreadySaved) {
-                wantList.push(animeData);
-                localStorage.setItem("wantList", JSON.stringify(wantList));
-                wantBtn.innerText = "Saved ✓";
-            } else {
-                wantBtn.innerText = "Already Saved";
-            }
+        if (!alreadySaved) {
+            wantList.push(animeData);
+            localStorage.setItem("wantList", JSON.stringify(wantList));
+            wantBtn.innerText = "Saved ✓";
+        } else {
+            wantBtn.innerText = "Already Saved";
         }
+    }
 
-    });
+});
 
 
