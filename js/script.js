@@ -64,17 +64,19 @@ function renderAnimeCards(animeList) {
         const description = anime.synopsis ? anime.synopsis.substring(0, 150) + "..." : "No description available.";
 
         card.innerHTML = `
-            <img src="${img}" alt="${anime.title}">
-            <div class="anime-overlay">
-                <h3>${anime.title}</h3>
-                <p>${description}</p>
+    <a class="anime-link" href="${anime.url}" target="_blank" rel="noopener noreferrer">
+        <img src="${img}" alt="${anime.title}">
+        <div class="anime-overlay">
+            <h3>${anime.title}</h3>
+            <p>${description}</p>
+        </div>
+    </a>
 
-                <div class="overlay-buttons">
-    <button class="btn-watched" data-id="${anime.mal_id}">Watched</button>
-    <button class="btn-want" data-id="${anime.mal_id}">Want</button>
-</div>
-            </div>
-        `;
+    <div class="overlay-buttons">
+        <button class="btn-watched" data-id="${anime.mal_id}">Watched</button>
+        <button class="btn-want" data-id="${anime.mal_id}">Want</button>
+    </div>
+`;
 
         grid.appendChild(card);
     });
