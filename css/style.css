@@ -1,12 +1,17 @@
 /* --- THEME VARIABLES --- */
 :root {
     /* DEFAULT: LIGHT MODE PALETTE */
-    --bg-gradient: linear-gradient(135deg, #ffffff, #e6e9f0); /* Clean white/gray */
-    --text-color: #1a1a1a;        /* Almost Black (easier on eyes than pure black) */
-    --cursor-color: #1a1a1a;      /* Typing cursor matches text */
-    --input-bg: #f3f4f6;          /* Light gray input box */
+    --bg-gradient: linear-gradient(135deg, #ffffff, #e6e9f0);
+    /* Clean white/gray */
+    --text-color: #1a1a1a;
+    /* Almost Black (easier on eyes than pure black) */
+    --cursor-color: #1a1a1a;
+    /* Typing cursor matches text */
+    --input-bg: #f3f4f6;
+    /* Light gray input box */
     --input-text: #000000;
-    --button-bg: #090979;         /* Keep button blue as brand color */
+    --button-bg: #090979;
+    /* Keep button blue as brand color */
     --button-hover: #0b0bd4;
 }
 
@@ -34,13 +39,14 @@
 body {
     height: 100vh;
     /* Use the variable instead of fixed colors */
-    background: var(--bg-gradient); 
+    background: var(--bg-gradient);
     display: flex;
     justify-content: center;
     align-items: center;
     /* Use the variable */
-    color: var(--text-color); 
-    transition: background 0.5s ease, color 0.5s ease; /* Smooth theme switch */
+    color: var(--text-color);
+    transition: background 0.5s ease, color 0.5s ease;
+    /* Smooth theme switch */
 }
 
 /* --- CONTAINER --- */
@@ -56,7 +62,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     /* Use variable for cursor color so it shows up in Light Mode */
-    border-right: 3px solid var(--cursor-color); 
+    border-right: 3px solid var(--cursor-color);
     width: 0;
     animation:
         typing 1.5s steps(15, end) forwards,
@@ -92,7 +98,8 @@ body {
     /* Use variables for input box */
     background: var(--input-bg);
     color: var(--input-text);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Adds slight depth in Light Mode */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    /* Adds slight depth in Light Mode */
 }
 
 .search-box button {
@@ -101,7 +108,8 @@ body {
     border: none;
     /* Use variables */
     background: var(--button-bg);
-    color: white; /* Keep text white on the blue button */
+    color: white;
+    /* Keep text white on the blue button */
     font-size: 1rem;
     cursor: pointer;
     transition: background 0.3s ease;
@@ -113,17 +121,27 @@ body {
 
 /* --- ANIMATION KEYFRAMES --- */
 @keyframes typing {
-    from { width: 0; }
-    to { width: 15ch; }
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 15ch;
+    }
 }
 
 @keyframes blink {
-    50% { border-color: transparent; }
+    50% {
+        border-color: transparent;
+    }
 }
 
 @keyframes fadeIn {
-    to { opacity: 0.85; }
+    to {
+        opacity: 0.85;
+    }
 }
+
 .anime-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -136,7 +154,7 @@ body {
     color: var(--input-text);
     padding: 1rem;
     border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .anime-card h3 {
@@ -175,10 +193,12 @@ body {
 /* --- CSS FOR THE HOVER EFFECT --- */
 
 .anime-card {
-    position: relative; /* Crucial for the hover effect */
-    overflow: hidden;   /* Hides the buttons when they slide down */
+    position: relative;
+    /* Crucial for the hover effect */
+    overflow: hidden;
+    /* Hides the buttons when they slide down */
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s;
 }
 
@@ -190,19 +210,22 @@ body {
 /* The Button Group - Hidden by default at the bottom */
 .anime-card .btn-group {
     position: absolute;
-    bottom: -60px; /* Hidden below the card */
+    bottom: -60px;
+    /* Hidden below the card */
     left: 0;
     right: 0;
-    background: rgba(0, 0, 0, 0.8); /* Dark transparent background */
+    background: rgba(0, 0, 0, 0.8);
+    /* Dark transparent background */
     padding: 10px;
     display: flex;
     justify-content: space-around;
-    transition: bottom 0.3s ease-in-out; /* The sliding animation */
+    transition: bottom 0.3s ease-in-out;
+    /* The sliding animation */
 }
 
 /* When hovering over the card, slide the buttons up */
 .anime-card:hover .btn-group {
-    bottom: 0; 
+    bottom: 0;
 }
 
 /* Basic styling to make the buttons look like your blueprint */
@@ -216,9 +239,21 @@ body {
     font-weight: bold;
 }
 
-.btn-want { color: #d97706; } /* Bookmark color */
-.btn-watched { color: #2563eb; } /* History color */
-.btn-mal { color: #1d4ed8; } /* MAL Blue */
+.btn-want {
+    color: #d97706;
+}
+
+/* Bookmark color */
+.btn-watched {
+    color: #2563eb;
+}
+
+/* History color */
+.btn-mal {
+    color: #1d4ed8;
+}
+
+/* MAL Blue */
 /* ===== RESULTS PAGE FULL LAYOUT ===== */
 
 .results-body {
@@ -275,6 +310,7 @@ body {
 .top-link-btn:hover {
     background: #0b0bd4;
 }
+
 /* ===== CLEAN POSTER GRID ===== */
 
 #anime-grid {
@@ -293,7 +329,7 @@ body {
     border-radius: 10px;
     overflow: hidden;
     background: #111;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
     transition: transform 0.25s ease;
 }
 
@@ -309,6 +345,7 @@ body {
 .anime-card img:hover {
     transform: scale(1.05);
 }
+
 .search-box {
     margin-bottom: 30px;
 }
@@ -322,6 +359,7 @@ body {
 .search-box button {
     border-radius: 25px;
 }
+
 .anime-card {
     position: relative;
     width: 200px;
@@ -336,6 +374,7 @@ body {
     object-fit: cover;
     display: block;
 }
+
 .anime-card:hover {
     transform: translateY(-6px);
 }
@@ -344,7 +383,7 @@ body {
 .anime-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.9);
+    background: rgba(0, 0, 0, 0.9);
     color: white;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -360,49 +399,88 @@ body {
     opacity: 1;
 }
 
+/* 1. Make the Title Bigger */
 .anime-overlay h3 {
-    margin: 0 0 8px;
-    font-size: 15px;
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    /* Increased size */
+    font-weight: 700;
 }
 
-.anime-overlay p {
-    font-size: 12px;
+/* 5. Style the Year and Episode text to be slightly faded */
+.anime-year,
+.anime-episodes {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    /* Light gray to separate it from the description */
+    margin-bottom: 2px;
+}
+
+/* 2. Add the Description with an auto-cutoff! */
+.anime-synopsis {
+    font-size: 0.85rem;
     line-height: 1.4;
-    max-height: 100px;
+    margin-top: 8px;
+    color: #ffffff;
+
+    /* This magic CSS limits the text to exactly 5 lines and adds "..." at the end */
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Show on hover */
-.anime-card:hover .anime-overlay {
-    opacity: 1;
-}
-.results-body {
-    background: linear-gradient(135deg, #0a0a2a, #000000);
-    min-height: 100vh;
-}
+/* 3. Center the Buttons at the bottom */
 .overlay-buttons {
-    margin-top: auto;
+    position: absolute;
+    bottom: 15px;
+    /* Lifted up slightly so they don't hit the very bottom */
+    left: 10px;
+    right: 10px;
     display: flex;
-    gap: 8px;
+    justify-content: center;
+    /* This centers the buttons perfectly! */
+    gap: 12px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 10;
+    /* Ensures buttons are clickable above the link */
+}
+
+/* 4. Make the Buttons Larger */
+.btn-watched,
+.btn-want,
+.remove-btn {
+    padding: 3px 14px;
+    /* Increased padding makes the buttons taller and wider */
+    font-size: 0.95rem;
+    /* Larger text inside the buttons */
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+/* Add a tiny pop effect when you click the buttons */
+.btn-watched:active,
+.btn-want:active {
+    transform: scale(0.95);
 }
 
 .btn-watched {
     background: #16a34a;
     color: white;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
 }
 
 .btn-want {
     background: #2563eb;
     color: white;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-}.remove-btn {
+}
+
+.remove-btn {
     margin-top: auto;
     background: #dc2626;
     color: white;
@@ -416,11 +494,13 @@ body {
 .remove-btn:hover {
     background: #b91c1c;
 }
+
 .anime-card a {
     display: block;
     width: 100%;
     height: 100%;
 }
+
 .anime-link {
     display: block;
     width: 100%;

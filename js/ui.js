@@ -39,7 +39,6 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
         const tagsJson = JSON.stringify(allTags).replace(/"/g, '&quot;');
 
         const imgUrl = anime.images?.jpg?.image_url || PLACEHOLDER_IMG;
-        const epText = anime.episodes ? `${anime.episodes} Episodes` : 'Ongoing';
 
         // 2. BUILD THE HTML STRUCTURE
         const card = document.createElement('div');
@@ -48,37 +47,41 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
         // This gives you the power to write different CSS for search results vs list items
         card.className = isListView ? 'anime-card list-mode' : 'anime-card search-mode';
 
-        // TWEAK AREA 4: Dynamic Buttons
+        // TWEAK AREA 4: Dynamic Buttons (Using the original classes)
         let buttonHTML = '';
 
         if (isListView) {
             buttonHTML = `
-                <button class="btn-mal" onclick="window.open('${anime.url}', '_blank')">🌐 MAL</button>
-                <button class="btn-remove" data-id="${anime.mal_id}">❌ Remove</button>
+                <button class="remove-btn" data-id="${anime.mal_id}">❌ Remove</button>
             `;
         } else {
-            // TWEAK: Added the MAL, Bookmark, and History icons
+            // Added data-image to both buttons!
             buttonHTML = `
-                <button class="btn-mal" onclick="window.open('${anime.url}', '_blank')">🌐 MAL</button>
-                <button class="btn-want" data-id="${anime.mal_id}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🔖 To Watch</button>
-                <button class="btn-watched" data-id="${anime.mal_id}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🕒 Watched</button>
+                <button class="btn-want" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🔖 To Watch</button>
+                <button class="btn-watched" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🕒 Watched</button>
             `;
         }
 
+        // Grab the aired dates and the synopsis from the API data
+        const epText = anime.episodes ? `${anime.episodes} Episodes` : 'Ongoing';
+        const airedText = anime.aired && anime.aired.string ? anime.aired.string : 'Unknown Date';
+        const synopsisText = anime.synopsis ? anime.synopsis : 'No description available.';
+
         // TWEAK AREA 5: The HTML Template
-        // Notice the loading="lazy" attribute on the image. This makes your site incredibly fast!
-        // Notice the title="${anime.title}" on the h3. If you use CSS to truncate long titles with "...", 
-        // the user can still hover over it to read the full name.
         card.innerHTML = `
-            <div class="card-image-wrapper">
+            <a href="${anime.url}" target="_blank" class="anime-link">
                 <img src="${imgUrl}" alt="${anime.title}" loading="lazy">
-            </div>
-            <div class="card-content">
-                <h3 class="anime-title" title="${anime.title}">${anime.title}</h3>
-                <p class="anime-meta">${epText}</p>
-                ${anime.matchScore ? `<p class="match-score"><strong>Match Score: ${anime.matchScore}</strong></p>` : ''}
-            </div>
-            <div class="btn-group">
+                
+                <div class="anime-overlay">
+                    <h3 title="${anime.title}">${anime.title}</h3>
+                    <p class="anime-year">${airedText}</p>
+                    <p class="anime-episodes">${epText}</p>
+                    <p class="anime-synopsis">${synopsisText}</p>
+                    ${anime.matchScore ? `<p style="margin-top: 5px; color: #fbbf24;"><strong>Score: ${anime.matchScore}</strong></p>` : ''}
+                </div>
+            </a>
+
+            <div class="overlay-buttons">
                 ${buttonHTML}
             </div>
         `;

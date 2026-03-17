@@ -1,68 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Watch History</title>
   <link rel="stylesheet" href="../css/style.css" />
 </head>
+
 <body class="results-body">
 
-<div class="results-wrapper">
-  <div class="results-panel">
-    <h2 class="results-title">Watch History</h2>
-    <div id="anime-grid"></div>
+  <div class="results-wrapper">
+    <div class="results-panel">
+      <h2 class="results-title">Watch History</h2>
+      <div id="anime-grid"></div>
+    </div>
   </div>
-</div>
 
-<script>
-let watched = JSON.parse(localStorage.getItem("watchedList")) || [];
-const grid = document.getElementById("anime-grid");
+  <script>
+    let watched = JSON.parse(localStorage.getItem("watchedList")) || [];
+    const grid = document.getElementById("anime-grid");
 
-function renderWatched() {
-    grid.innerHTML = "";
+    function renderwatched() {
+      grid.innerHTML = "";
 
-    if (!watched.length) {
+      if (!watched.length) {
         grid.innerHTML = "<p style='color:white;'>No anime saved yet.</p>";
         return;
-    }
+      }
 
-    watched.forEach(anime => {
+      watched.forEach(anime => {
         const card = document.createElement("div");
         card.className = "anime-card";
 
+        // Fixed: Switched to anime.mal_id
         card.innerHTML = `
-            <img src="${anime.image}" alt="${anime.title}">
-            <div class="anime-overlay" style="opacity:1;">
-                <h3>${anime.title}</h3>
-                <button class="remove-btn" data-id="${anime.malId || ""}" data-title="${anime.title}">Remove</button>
+            <div class="anime-link">
+                <img src="${anime.image}" alt="${anime.title}">
+                <div class="anime-overlay" style="opacity:1;">
+                    <h3>${anime.title}</h3>
+                </div>
+            </div>
+            <div class="overlay-buttons">
+                <button class="remove-btn" data-id="${anime.mal_id}" data-title="${anime.title}">Remove</button>
             </div>
         `;
 
         grid.appendChild(card);
-    });
-}
-
-grid.addEventListener("click", (event) => {
-    const removeBtn = event.target.closest(".remove-btn");
-    if (!removeBtn) return;
-
-    const rawId = removeBtn.dataset.id;
-    const title = removeBtn.dataset.title;
-
-    if (rawId) {
-        const malId = Number(rawId);
-        watched = watched.filter(anime => anime.malId !== malId);
-    } else {
-        watched = watched.filter(anime => anime.title !== title);
+      });
     }
 
-    localStorage.setItem("watchedList", JSON.stringify(watched));
-    renderWatched();
-});
+    grid.addEventListener("click", (event) => {
+      const removeBtn = event.target.closest(".remove-btn");
+      if (!removeBtn) return;
 
-renderWatched();
-</script>
+      const rawId = removeBtn.dataset.id;
+      const title = removeBtn.dataset.title;
+
+      if (rawId) {
+        // Fixed: Ensure we are checking against mal_id
+        const mal_id = Number(rawId);
+        watched = watched.filter(anime => anime.mal_id !== mal_id);
+      } else {
+        watched = watched.filter(anime => anime.title !== title);
+      }
+
+      localStorage.setItem("watchedList", JSON.stringify(watched));
+      renderwatched();
+    });
+  </script>
 
 </body>
+
 </html>

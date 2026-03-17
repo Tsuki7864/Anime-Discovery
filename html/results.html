@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,40 +10,42 @@
 
 <body class="results-body">
 
-<div class="results-wrapper">
-    <div class="results-panel">
+    <div class="results-wrapper">
+        <div class="results-panel">
 
-        <div class="results-top-row">
-            <h2 class="results-title">
-                Results for: <span id="search-query"></span>
-            </h2>
+            <div class="results-top-row">
+                <h2 class="results-title">
+                    Results for: <span id="search-query"></span>
+                </h2>
 
-            <div class="results-actions">
-                <button id="btn-suggest" class="btn-want">
-                    Smart Recommendations
-                </button>
+                <div class="results-actions">
+                    <button id="btn-suggest" class="btn-want">
+                        Smart Recommendations
+                    </button>
 
-                <a href="watched.html" class="top-link-btn">Watched</a>
-                <a href="want.html" class="top-link-btn">Want</a>
+                    <a href="want.html" class="top-link-btn">Want</a>
+                    <a href="watched.html" class="top-link-btn">Watched</a>
+
+                </div>
             </div>
+
+            <div id="anime-grid"></div>
+
         </div>
-
-        <div id="anime-grid"></div>
-
     </div>
-</div>
 
-<div id="loading-overlay" class="loading-overlay">
-    <div class="spinner"></div>
-</div>
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
 
-<script type="module" src="../js/script.js"></script>
+    <script type="module" src="../js/script.js"></script>
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('q');
-    document.getElementById('search-query').textContent = query;
-</script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
+        document.getElementById('search-query').textContent = query;
+    </script>
 
 </body>
+
 </html>

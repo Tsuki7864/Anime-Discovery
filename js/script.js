@@ -92,12 +92,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // SUGGEST BUTTON
+    // --- UPDATED SUGGEST BUTTON ---
     if (suggestBtn) {
         suggestBtn.addEventListener('click', async () => {
             toggleLoading(true);
 
             try {
-                const candidates = await fetchFromJikan('/top/anime?limit=25');
+                // THE FIX: Broaden the pool! 
+                // Instead of just the Top 25, we grab a random page from the top 125 most popular anime.
+                // This guarantees fresh suggestions every time you click the button!
+                const randomPage = Math.floor(Math.random() * 5) + 1;
+                const candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=25`);
 
                 const userProfile = {
                     genrePreferences: getGenrePreferences(),
@@ -121,34 +126,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // BUTTON HANDLING FOR ANIME CARDS
+    // --- UPDATED BUTTON HANDLING FOR ANIME CARDS ---
     if (resultsContainer) {
         resultsContainer.addEventListener('click', (event) => {
-            const target = event.target;
-            const watchedBtn = target.closest('.btn-watched');
-            const wantBtn = target.closest('.btn-want');
+            const watchedBtn = event.target.closest('.btn-watched');
+            const wantBtn = event.target.closest('.btn-want');
 
             if (watchedBtn || wantBtn) {
+                // THE FIX: Stop the click from triggering the anime link behind the buttons!
+                event.preventDefault();
+                event.stopPropagation();
+
                 const btn = watchedBtn || wantBtn;
+
+                // Rebuild the data object
                 const animeData = {
                     mal_id: parseInt(btn.dataset.id),
                     title: btn.dataset.title,
+                    image: btn.dataset.image, // <--- ADD THIS LINE!
                     episodes: parseInt(btn.dataset.episodes) || 0,
                     genres: safeParseDataset(btn.dataset.genres),
-                    themes: safeParseDataset(btn.dataset.themes),
-                    demographics: safeParseDataset(btn.dataset.demographics)
+                    themes: [],
+                    demographics: []
                 };
 
                 if (watchedBtn) {
                     addToWatched(animeData);
-                    watchedBtn.classList.add('active');
-                    watchedBtn.innerText = "✓ Saved (Watched)";
-                    if (wantBtn) wantBtn.style.display = 'none';
+                    btn.classList.add('active');
+                    btn.innerText = "✓ Saved";
+
+                    // Safely hide the other button
+                    const sibling = btn.parentElement.querySelector('.btn-want');
+                    if (sibling) sibling.style.display = 'none';
                 } else {
                     addToWantList(animeData);
-                    wantBtn.classList.add('active');
-                    wantBtn.innerText = "★ Added to List";
-                    if (watchedBtn) watchedBtn.style.display = 'none';
+                    btn.classList.add('active');
+                    btn.innerText = "★ Added";
+
+                    // Safely hide the other button
+                    const sibling = btn.parentElement.querySelector('.btn-watched');
+                    if (sibling) sibling.style.display = 'none';
                 }
             }
         });
