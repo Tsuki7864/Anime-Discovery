@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Watch History</title>
+  <title>Watched</title>
   <link rel="stylesheet" href="../css/style.css" />
 </head>
 
@@ -12,61 +12,70 @@
 
   <div class="results-wrapper">
     <div class="results-panel">
-      <h2 class="results-title">Watch History</h2>
+      <div class="results-top-row">
+        <h2 class="results-title">Watched</h2>
+
+        <div class="mini-search-box" style="display: flex; gap: 8px; margin-right: auto; margin-left: 20px;">
+          <input type="text" id="mini-search-input" placeholder="Search anime..."
+            style="padding: 6px 12px; border-radius: 20px; border: none; outline: none;">
+          <button onclick="miniSearch()"
+            style="padding: 6px 12px; border-radius: 20px; border: none; background: #2563eb; color: white; cursor: pointer;">🔍</button>
+        </div>
+
+        <div class="results-actions">
+          <button onclick="window.history.back()" class="top-link-btn" style="background: #4b5563;">⬅ Back</button>
+          <a href="watched.html" class="top-link-btn">Watched</a>
+          <a href="watched.html" class="top-link-btn" style="opacity: 0.5; pointer-events: none;">watched</a>
+        </div>
+      </div>
+
       <div id="anime-grid"></div>
     </div>
   </div>
-
   <script>
-    let watched = JSON.parse(localStorage.getItem("watchedList")) || [];
-    const grid = document.getElementById("anime-grid");
-
-    function renderwatched() {
-      grid.innerHTML = "";
-
-      if (!watched.length) {
-        grid.innerHTML = "<p style='color:white;'>No anime saved yet.</p>";
-        return;
-      }
-
-      watched.forEach(anime => {
-        const card = document.createElement("div");
-        card.className = "anime-card";
-
-        // Fixed: Switched to anime.mal_id
-        card.innerHTML = `
-            <div class="anime-link">
-                <img src="${anime.image}" alt="${anime.title}">
-                <div class="anime-overlay" style="opacity:1;">
-                    <h3>${anime.title}</h3>
-                </div>
-            </div>
-            <div class="overlay-buttons">
-                <button class="remove-btn" data-id="${anime.mal_id}" data-title="${anime.title}">Remove</button>
-            </div>
-        `;
-
-        grid.appendChild(card);
-      });
+    function miniSearch() {
+      const input = document.getElementById('mini-search-input').value.trim();
+      if (input === "") return;
+      window.location.href = `results.html?q=${encodeURIComponent(input)}`;
     }
 
-    grid.addEventListener("click", (event) => {
-      const removeBtn = event.target.closest(".remove-btn");
+    const searchInput = document.getElementById('mini-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') miniSearch();
+      });
+    }
+  </script>
+  <script type="module">
+    import { renderAnimeCards } from '../js/ui.js';
+
+    // 1. Grab the list from local storage
+    let watchedList = JSON.parse(localStorage.getItem("watchedList")) || [];
+
+    // 2. Format the flattened data so ui.js can read the image URL perfectly
+    function getFormattedList() {
+      return watchedList.map(anime => ({
+        ...anime,
+        images: { jpg: { image_url: anime.image } } // Re-creates the API structure
+      }));
+    }
+
+    // 3. Draw the cards using ui.js! (The 'true' tells it to use List Mode)
+    renderAnimeCards(getFormattedList(), '#anime-grid', true);
+
+    // 4. Handle the Remove Button clicks
+    document.querySelector('#anime-grid').addEventListener('click', (event) => {
+      const removeBtn = event.target.closest('.remove-btn');
       if (!removeBtn) return;
 
-      const rawId = removeBtn.dataset.id;
-      const title = removeBtn.dataset.title;
+      const mal_id = Number(removeBtn.dataset.id);
 
-      if (rawId) {
-        // Fixed: Ensure we are checking against mal_id
-        const mal_id = Number(rawId);
-        watched = watched.filter(anime => anime.mal_id !== mal_id);
-      } else {
-        watched = watched.filter(anime => anime.title !== title);
-      }
+      // Filter it out and save back to storage
+      watchedList = watchedList.filter(anime => anime.mal_id !== mal_id);
+      localStorage.setItem("watchedList", JSON.stringify(watchedList));
 
-      localStorage.setItem("watchedList", JSON.stringify(watched));
-      renderwatched();
+      // Redraw the grid
+      renderAnimeCards(getFormattedList(), '#anime-grid', true);
     });
   </script>
 

@@ -18,14 +18,20 @@
                     Results for: <span id="search-query"></span>
                 </h2>
 
+                <div class="mini-search-box" style="display: flex; gap: 8px; margin-right: auto; margin-left: 20px;">
+                    <input type="text" id="mini-search-input" placeholder="Search anime..."
+                        style="padding: 6px 12px; border-radius: 20px; border: none; outline: none;">
+                    <button onclick="miniSearch()"
+                        style="padding: 6px 12px; border-radius: 20px; border: none; background: #2563eb; color: white; cursor: pointer;">🔍</button>
+                </div>
+
                 <div class="results-actions">
-                    <button id="btn-suggest" class="btn-want">
-                        Smart Recommendations
-                    </button>
+                    <button onclick="window.history.back()" class="top-link-btn" style="background: #4b5563;">⬅
+                        Back</button>
 
-                    <a href="want.html" class="top-link-btn">Want</a>
+                    <button id="btn-suggest" class="btn-want">Smart Recommendations</button>
                     <a href="watched.html" class="top-link-btn">Watched</a>
-
+                    <a href="want.html" class="top-link-btn">Want</a>
                 </div>
             </div>
 
@@ -45,7 +51,23 @@
         const query = urlParams.get('q');
         document.getElementById('search-query').textContent = query;
     </script>
+    <script>
+        function miniSearch() {
+            const input = document.getElementById('mini-search-input').value.trim();
+            if (input === "") return;
 
+            // Instantly redirects them to a fresh search!
+            window.location.href = `results.html?q=${encodeURIComponent(input)}`;
+        }
+
+        // Allows the user to press 'Enter' to search instead of clicking the icon
+        const searchInput = document.getElementById('mini-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') miniSearch();
+            });
+        }
+    </script>
 </body>
 
 </html>
