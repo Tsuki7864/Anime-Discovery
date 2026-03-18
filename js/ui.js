@@ -52,13 +52,13 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
 
         if (isListView) {
             buttonHTML = `
-                <button class="remove-btn" data-id="${anime.mal_id}">❌ Remove</button>
+                <button class="remove-btn" data-id="${anime.mal_id}">❌</button>
             `;
         } else {
             // Added data-image to both buttons!
             buttonHTML = `
-                <button class="btn-want" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🔖 To Watch</button>
-                <button class="btn-watched" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🕒 Watched</button>
+                <button class="btn-want" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🔖</button>
+                <button class="btn-watched" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🕒</button>
             `;
         }
 

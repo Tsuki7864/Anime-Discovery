@@ -455,7 +455,7 @@ body {
 .remove-btn {
     padding: 3px 14px;
     /* Increased padding makes the buttons taller and wider */
-    font-size: 0.95rem;
+    font-size: 1rem;
     /* Larger text inside the buttons */
     font-weight: bold;
     border: none;
