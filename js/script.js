@@ -127,47 +127,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- UPDATED BUTTON HANDLING FOR ANIME CARDS ---
+    // --- UPDATED BUTTON HANDLING (WITH TOGGLE & GUARANTEED SAVES) ---
     if (resultsContainer) {
         resultsContainer.addEventListener('click', (event) => {
             const watchedBtn = event.target.closest('.btn-watched');
             const wantBtn = event.target.closest('.btn-want');
 
             if (watchedBtn || wantBtn) {
-                // THE FIX: Stop the click from triggering the anime link behind the buttons!
                 event.preventDefault();
                 event.stopPropagation();
 
                 const btn = watchedBtn || wantBtn;
+                const isWatched = !!watchedBtn;
+                const listName = isWatched ? 'watchedList' : 'wantList';
+                const siblingClass = isWatched ? '.btn-want' : '.btn-watched';
+                const sibling = btn.parentElement.querySelector(siblingClass);
 
-                // Rebuild the data object
+                // Safely parse genres
+                let parsedGenres = [];
+                try { parsedGenres = JSON.parse(btn.dataset.genres || "[]"); } catch (e) { }
+
+                // 1. Build the data object
                 const animeData = {
                     mal_id: parseInt(btn.dataset.id),
                     title: btn.dataset.title,
-                    image: btn.dataset.image, // <--- ADD THIS LINE!
+                    image: btn.dataset.image,
                     episodes: parseInt(btn.dataset.episodes) || 0,
-                    genres: safeParseDataset(btn.dataset.genres),
-                    themes: [],
-                    demographics: []
+                    genres: parsedGenres
                 };
 
-                if (watchedBtn) {
-                    addToWatched(animeData);
-                    btn.classList.add('active');
-                    btn.innerText = "✓ Saved";
+                // 2. Check what's currently in Local Storage
+                let list = JSON.parse(localStorage.getItem(listName)) || [];
+                const existingIndex = list.findIndex(a => a.mal_id === animeData.mal_id);
 
-                    // Safely hide the other button
-                    const sibling = btn.parentElement.querySelector('.btn-want');
-                    if (sibling) sibling.style.display = 'none';
+                if (existingIndex > -1) {
+                    // TOGGLE OFF: It's already saved, so remove it!
+                    list.splice(existingIndex, 1);
+                    localStorage.setItem(listName, JSON.stringify(list));
+
+                    btn.classList.remove('active');
+                    btn.innerText = isWatched ? "🕒" : "🔖";
+                    if (sibling) sibling.style.display = 'inline-block'; // Bring sibling back
                 } else {
-                    addToWantList(animeData);
-                    btn.classList.add('active');
-                    btn.innerText = "★ Added";
+                    // TOGGLE ON: Not saved yet, so add it!
+                    list.push(animeData);
+                    localStorage.setItem(listName, JSON.stringify(list));
 
-                    // Safely hide the other button
-                    const sibling = btn.parentElement.querySelector('.btn-watched');
-                    if (sibling) sibling.style.display = 'none';
+                    btn.classList.add('active');
+                    btn.innerText = isWatched ? "✓ Saved" : "★ Added";
+                    if (sibling) sibling.style.display = 'none'; // Hide sibling
                 }
+
+                // 3. Check if we need to show/hide the Suggest Button
+                updateSuggestButtonVisibility();
             }
         });
     }
 });
+// --- AUTO-HIDE SUGGESTION BUTTON ---
+function updateSuggestButtonVisibility() {
+    const suggestBtn = document.getElementById('btn-suggest');
+    if (!suggestBtn) return; // If we aren't on the results page, do nothing
+
+    const watched = JSON.parse(localStorage.getItem('watchedList')) || [];
+    const want = JSON.parse(localStorage.getItem('wantList')) || [];
+
+    // If BOTH lists are totally empty, hide the button. Otherwise, show it!
+    if (watched.length === 0 && want.length === 0) {
+        suggestBtn.style.display = 'none';
+    } else {
+        suggestBtn.style.display = 'inline-block';
+    }
+}
+
+// Run this once as soon as the page loads!
+document.addEventListener('DOMContentLoaded', updateSuggestButtonVisibility);
