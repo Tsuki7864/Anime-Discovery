@@ -64,7 +64,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resultsContainer = document.querySelector('#anime-grid');
 
     // --- THE FIX: AUTOMATIC SEARCH ON PAGE LOAD ---
-    // Look at the web address and see if there is a "?q=..."
     const urlParams = new URLSearchParams(window.location.search);
     const searchQuery = urlParams.get('q');
 
@@ -75,8 +74,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderAnimeCards(results);
         toggleLoading(false);
     }
-    // ----------------------------------------------
-
 
     // SEARCH BUTTON (If you ever add a search bar back to results.html)
     if (searchBtn) {
@@ -126,7 +123,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- UPDATED BUTTON HANDLING FOR ANIME CARDS ---
     // --- UPDATED BUTTON HANDLING (WITH TOGGLE & GUARANTEED SAVES) ---
     if (resultsContainer) {
         resultsContainer.addEventListener('click', (event) => {
@@ -153,7 +149,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     title: btn.dataset.title,
                     image: btn.dataset.image,
                     episodes: parseInt(btn.dataset.episodes) || 0,
-                    genres: parsedGenres
+                    genres: parsedGenres,
+                    synopsis: decodeURIComponent(btn.dataset.synopsis || 'No description available.'),
+                    aired: { string: btn.dataset.aired || 'Unknown Date' },
+                    url: btn.dataset.url
                 };
 
                 // 2. Check what's currently in Local Storage
