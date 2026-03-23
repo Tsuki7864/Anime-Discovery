@@ -2,9 +2,9 @@ const STORAGE_KEY = 'anime_discovery_profile';
 
 // Default empty profile
 let userProfile = {
-    watched: [],       
-    wantToWatch: [],   
-    genrePreferences: {}, 
+    watched: [],
+    wantToWatch: [],
+    genrePreferences: {},
     lengthPreferences: { "short": 0, "medium": 0, "long": 0 } // NEW: Length tracking
 };
 
@@ -31,32 +31,63 @@ function saveProfile() {
 
 // --- UPDATED ACTIONS IN profileManager.js ---
 
-export function addToWantList(anime) {
-    if (userProfile.wantToWatch.includes(anime.mal_id)) return;
-    userProfile.wantToWatch.push(anime.mal_id);
-    
-    const allTags = [...(anime.genres || []), ...(anime.themes || []), ...(anime.demographics || [])];
-    
-    // TWEAK: "To Watch" is now the HEAVY weight (+5 Points)
-    updateGenreStats(allTags, 5); 
-    updateLengthStats(anime.episodes, 5);
-    
+export function toggleSave(anime, listName) {
+    const isWatched = listName === 'watchedList';
+    const weight = isWatched ? 2 : 5;
+    const profileKey = isWatched ? 'watched' : 'wantToWatch';
+
+    const allTags = [
+        ...(anime.genres || []),
+        ...(anime.themes || []),
+        ...(anime.demographics || [])
+    ];
+
+    const isAlreadySaved = userProfile[profileKey].includes(anime.mal_id);
+
+    if (isAlreadySaved) {
+        // --- REMOVE ---
+        // 1. Remove ID from profile
+        userProfile[profileKey] = userProfile[profileKey].filter(id => id !== anime.mal_id);
+        // 2. Deduct the genre and length points
+        removeGenreStats(allTags, weight);
+        removeLengthStats(anime.episodes, weight);
+        // 3. Remove full object from the list in localStorage
+        let list = JSON.parse(localStorage.getItem(listName)) || [];
+        list = list.filter(a => a.mal_id !== anime.mal_id);
+        localStorage.setItem(listName, JSON.stringify(list));
+    } else {
+        // --- ADD ---
+        // 1. Add ID to profile
+        userProfile[profileKey].push(anime.mal_id);
+        // 2. Add genre and length points
+        updateGenreStats(allTags, weight);
+        updateLengthStats(anime.episodes, weight);
+        // 3. Save full object to the list in localStorage
+        let list = JSON.parse(localStorage.getItem(listName)) || [];
+        list.push(anime);
+        localStorage.setItem(listName, JSON.stringify(list));
+    }
+
     saveProfile();
+    return !isAlreadySaved; // true = was added, false = was removed
 }
 
-export function addToWatched(anime) {
-    if (userProfile.watched.includes(anime.mal_id)) return;
-    userProfile.watched.push(anime.mal_id);
-    
-    const allTags = [...(anime.genres || []), ...(anime.themes || []), ...(anime.demographics || [])];
-    
-    // TWEAK: "Already Watched" is now the LIGHTER weight (+2 Points)
-    updateGenreStats(allTags, 2); 
-    updateLengthStats(anime.episodes, 2);
-    
-    saveProfile();
+// Mirror functions of updateGenreStats and updateLengthStats
+function removeGenreStats(genres, weight) {
+    if (!genres || !Array.isArray(genres)) return;
+    genres.forEach(g => {
+        if (g && g.name && userProfile.genrePreferences[g.name] !== undefined) {
+            userProfile.genrePreferences[g.name] -= weight;
+        }
+    });
 }
 
+function removeLengthStats(episodes, weight) {
+    if (!episodes || episodes === 0) return;
+    if (episodes <= 13) userProfile.lengthPreferences["short"] -= weight;
+    else if (episodes <= 26) userProfile.lengthPreferences["medium"] -= weight;
+    else userProfile.lengthPreferences["long"] -= weight;
+}
 // 4. Update Helpers
 function updateGenreStats(genres, weight) {
     if (!genres || !Array.isArray(genres)) return;
@@ -70,12 +101,13 @@ function updateGenreStats(genres, weight) {
 
 function updateLengthStats(episodes, weight) {
     // If episodes is null/0 (ongoing/unknown), we just skip it
-    if (!episodes || episodes === 0) return; 
+    if (!episodes || episodes === 0) return;
 
     if (episodes <= 13) userProfile.lengthPreferences["short"] += weight;
     else if (episodes <= 26) userProfile.lengthPreferences["medium"] += weight;
     else userProfile.lengthPreferences["long"] += weight;
 }
+
 
 // 5. Getters for the Algorithm
 export const getGenrePreferences = () => userProfile.genrePreferences;

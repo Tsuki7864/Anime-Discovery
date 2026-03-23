@@ -1,6 +1,5 @@
 import {
-    addToWatched,
-    addToWantList,
+    toggleSave,
     getGenrePreferences,
     getLengthPreferences,
     getExcludedIds
@@ -57,6 +56,8 @@ function safeParseDataset(value) {
     }
 }
 
+let currentPage = 1;
+let currentQuery = '';
 document.addEventListener('DOMContentLoaded', async () => {
 
     const searchBtn = document.querySelector('#search-btn');
@@ -69,10 +70,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // If there is a search query in the URL, fetch the anime immediately!
     if (searchQuery && resultsContainer) {
+        currentQuery = searchQuery;
+        currentPage = 1;
         toggleLoading(true);
-        const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(searchQuery)}&limit=12`);
+        const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(searchQuery)}&limit=25&page=1`);
         renderAnimeCards(results);
         toggleLoading(false);
+        updateLoadMoreVisibility(results.length);
+    }
+
+    const loadMoreBtn = document.querySelector('#load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', async () => {
+            currentPage++;
+            toggleLoading(true);
+            const results = await fetchFromJikan(
+                `/anime?q=${encodeURIComponent(currentQuery)}&limit=25&page=${currentPage}`
+            );
+            renderAnimeCards(results, '#anime-grid', false, true); // append = true
+            toggleLoading(false);
+            updateLoadMoreVisibility(results.length);
+        });
     }
 
     // SEARCH BUTTON (If you ever add a search bar back to results.html)
@@ -82,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!query) return;
 
             toggleLoading(true);
-            const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(query)}&limit=12`);
+            const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(query)}&limit=25`);
             renderAnimeCards(results);
             toggleLoading(false);
         });
