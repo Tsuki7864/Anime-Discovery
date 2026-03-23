@@ -1,7 +1,3 @@
-// ui.js
-// ROLE: Frontend Presentation - Handles rendering HTML to the screen cleanly.
-
-// TWEAK AREA 1: Fallback Image
 // If an anime has no poster, this image is used. You could replace this URL 
 // with a custom branded logo for "Anime Discovery".
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/225x318?text=No+Image';
@@ -46,30 +42,49 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
         // TWEAK AREA 3: Dynamic CSS Classes
         // This gives you the power to write different CSS for search results vs list items
         card.className = isListView ? 'anime-card list-mode' : 'anime-card search-mode';
-
         // TWEAK AREA 4: Dynamic Buttons (Using the original classes)
-        let buttonHTML = '';
-
-        if (isListView) {
-            buttonHTML = `
-                <button class="remove-btn" data-id="${anime.mal_id}">❌</button>
-            `;
-        } else {
-            // Added data-image to both buttons!
-            buttonHTML = `
-                <button class="btn-want" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🔖</button>
-                <button class="btn-watched" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}">🕒</button>
-            `;
-        }
 
         // Grab the aired dates and the synopsis from the API data
         const epText = anime.episodes ? `${anime.episodes} Episodes` : 'Ongoing';
         const airedText = anime.aired && anime.aired.string ? anime.aired.string : 'Unknown Date';
         const synopsisText = anime.synopsis ? anime.synopsis : 'No description available.';
+        const safeSynopsis = encodeURIComponent(synopsisText);
+
+        const animeUrl = anime.url ? anime.url : `https://myanimelist.net/anime/${anime.mal_id}`;
+
+        let buttonHTML = '';
+
+        if (isListView) {
+            buttonHTML = `
+                <button class="remove-btn" data-id="${anime.mal_id}">❌ Remove</button>
+            `;
+        } else {
+            // 1. Check the database to see if this anime is already saved
+            const watchedList = JSON.parse(localStorage.getItem('watchedList')) || [];
+            const wantList = JSON.parse(localStorage.getItem('wantList')) || [];
+            const inWatched = watchedList.some(item => item.mal_id === anime.mal_id);
+            const inWant = wantList.some(item => item.mal_id === anime.mal_id);
+
+            // 2. Set up the styles and text based on what we found
+            const wantStyle = inWatched ? 'style="display: none;"' : '';
+            const watchedStyle = inWant ? 'style="display: none;"' : '';
+
+            const wantClass = inWant ? 'btn-want active' : 'btn-want';
+            const watchedClass = inWatched ? 'btn-watched active' : 'btn-watched';
+
+            const wantText = inWant ? '★ Added' : '🔖';
+            const watchedText = inWatched ? '✓ Saved' : '🕒';
+
+            // 3. Build the buttons with the correct starting states!
+            buttonHTML = `
+                <button class="${wantClass}" ${wantStyle} data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}" data-aired="${airedText}" data-synopsis="${safeSynopsis}" data-url="${animeUrl}">${wantText}</button>
+                <button class="${watchedClass}" ${watchedStyle} data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}" data-aired="${airedText}" data-synopsis="${safeSynopsis}" data-url="${animeUrl}">${watchedText}</button>
+            `;
+        }
 
         // TWEAK AREA 5: The HTML Template
         card.innerHTML = `
-            <a href="${anime.url}" target="_blank" class="anime-link">
+            <a href="${animeUrl}" target="_blank" class="anime-link">
                 <img src="${imgUrl}" alt="${anime.title}" loading="lazy">
                 
                 <div class="anime-overlay">
