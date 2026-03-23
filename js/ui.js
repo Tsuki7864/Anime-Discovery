@@ -56,13 +56,29 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
 
         if (isListView) {
             buttonHTML = `
-                <button class="remove-btn" data-id="${anime.mal_id}">❌</button>
+                <button class="remove-btn" data-id="${anime.mal_id}">❌ Remove</button>
             `;
         } else {
-            // FIX 1: We must actually put data-aired, data-synopsis, and data-url inside these buttons!
+            // 1. Check the database to see if this anime is already saved
+            const watchedList = JSON.parse(localStorage.getItem('watchedList')) || [];
+            const wantList = JSON.parse(localStorage.getItem('wantList')) || [];
+            const inWatched = watchedList.some(item => item.mal_id === anime.mal_id);
+            const inWant = wantList.some(item => item.mal_id === anime.mal_id);
+
+            // 2. Set up the styles and text based on what we found
+            const wantStyle = inWatched ? 'style="display: none;"' : '';
+            const watchedStyle = inWant ? 'style="display: none;"' : '';
+
+            const wantClass = inWant ? 'btn-want active' : 'btn-want';
+            const watchedClass = inWatched ? 'btn-watched active' : 'btn-watched';
+
+            const wantText = inWant ? '★ Added' : '🔖 To Watch';
+            const watchedText = inWatched ? '✓ Saved' : '🕒 Watched';
+
+            // 3. Build the buttons with the correct starting states!
             buttonHTML = `
-                <button class="btn-want" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}" data-aired="${airedText}" data-synopsis="${safeSynopsis}" data-url="${animeUrl}">🔖</button>
-                <button class="btn-watched" data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}" data-aired="${airedText}" data-synopsis="${safeSynopsis}" data-url="${animeUrl}">🕒</button>
+                <button class="${wantClass}" ${wantStyle} data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}" data-aired="${airedText}" data-synopsis="${safeSynopsis}" data-url="${animeUrl}">${wantText}</button>
+                <button class="${watchedClass}" ${watchedStyle} data-id="${anime.mal_id}" data-image="${imgUrl}" data-episodes="${anime.episodes || 0}" data-title="${anime.title}" data-genres="${tagsJson}" data-aired="${airedText}" data-synopsis="${safeSynopsis}" data-url="${animeUrl}">${watchedText}</button>
             `;
         }
 
