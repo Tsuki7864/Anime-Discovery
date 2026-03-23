@@ -72,8 +72,8 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
             const wantClass = inWant ? 'btn-want active' : 'btn-want';
             const watchedClass = inWatched ? 'btn-watched active' : 'btn-watched';
 
-            const wantText = inWant ? '★ Added' : '🔖 To Watch';
-            const watchedText = inWatched ? '✓ Saved' : '🕒 Watched';
+            const wantText = inWant ? '★ Added' : '🔖';
+            const watchedText = inWatched ? '✓ Saved' : '🕒';
 
             // 3. Build the buttons with the correct starting states!
             buttonHTML = `
