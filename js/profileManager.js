@@ -1,6 +1,11 @@
+// ==========================================
+// 1. THE SETUP: GETTING THE BLANK NOTEBOOK
+// ==========================================
+
+// The label on the front of our notebook so the browser remembers where it is.
 const STORAGE_KEY = 'anime_discovery_profile';
 
-// Default empty profile
+// Our blank notebook with 4 empty sections.
 let userProfile = {
     watched: [],
     wantToWatch: [],
@@ -8,28 +13,35 @@ let userProfile = {
     lengthPreferences: { "short": 0, "medium": 0, "long": 0 } // NEW: Length tracking
 };
 
-// 1. Load data
+
+// ==========================================
+// 2. THE DRAWER: OPENING & CLOSING THE NOTEBOOK
+// ==========================================
+
+// Instruction: Take the notebook out of the drawer
 export function loadUserProfile() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const saved = localStorage.getItem(STORAGE_KEY); // Look in the drawer
+    if (saved) { // If we found the notebook...
         try {
-            userProfile = JSON.parse(saved);
-            // Safety check in case it's an old save file without length tracking
+            userProfile = JSON.parse(saved); // Open it up and read it
+            
+            // Just in case it's an old notebook missing the length section, add it!
             if (!userProfile.lengthPreferences) {
                 userProfile.lengthPreferences = { "short": 0, "medium": 0, "long": 0 };
             }
         } catch (e) {
-            resetProfile();
+            resetProfile(); // If the notebook is unreadable, throw it away and get a new one
         }
     }
-    return userProfile;
+    return userProfile; // Hand the notebook back to the app to use
 }
 
+// Instruction: Put the notebook back in the drawer
 function saveProfile() {
+    // Turn the notebook into text and shove it in the browser's drawer
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userProfile));
 }
 
-// --- UPDATED ACTIONS IN profileManager.js ---
 
 export function toggleSave(anime, listName) {
     const isWatched = listName === 'watchedList';
@@ -90,19 +102,25 @@ function removeLengthStats(episodes, weight) {
 }
 // 4. Update Helpers
 function updateGenreStats(genres, weight) {
-    if (!genres || !Array.isArray(genres)) return;
-    genres.forEach(g => {
+    if (!genres || !Array.isArray(genres)) return; // If there are no genres, stop.
+    
+    genres.forEach(g => { // Look at every genre the show has
         if (g && g.name) {
+            // If we haven't seen this genre before, start it at 0
             if (!userProfile.genrePreferences[g.name]) userProfile.genrePreferences[g.name] = 0;
+            
+            // Add the points (the "weight")
             userProfile.genrePreferences[g.name] += weight;
         }
     });
 }
 
+// Instruction: Add points to the Length Scoreboard
 function updateLengthStats(episodes, weight) {
     // If episodes is null/0 (ongoing/unknown), we just skip it
     if (!episodes || episodes === 0) return;
 
+    // Add points to the right category based on episode count
     if (episodes <= 13) userProfile.lengthPreferences["short"] += weight;
     else if (episodes <= 26) userProfile.lengthPreferences["medium"] += weight;
     else userProfile.lengthPreferences["long"] += weight;
@@ -112,14 +130,18 @@ function updateLengthStats(episodes, weight) {
 // 5. Getters for the Algorithm
 export const getGenrePreferences = () => userProfile.genrePreferences;
 export const getLengthPreferences = () => userProfile.lengthPreferences;
+
+// Instruction: Tell the app which shows to hide (ones we already know about)
 export function getExcludedIds() {
+    // Combine both lists and remove any duplicates
     return [...new Set([...userProfile.watched, ...userProfile.wantToWatch])];
 }
 
-// 6. Reset
+// Instruction: Destroy the notebook and start over
 export function resetProfile() {
-    localStorage.removeItem(STORAGE_KEY);
-    location.reload();
+    localStorage.removeItem(STORAGE_KEY); // Delete it from the drawer
+    location.reload(); // Refresh the web page
 }
 
+// The very first thing the app does: open the drawer and load the notebook!
 loadUserProfile();

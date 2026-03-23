@@ -65,18 +65,23 @@
 
     // 4. Handle the Remove Button clicks
     document.querySelector('#anime-grid').addEventListener('click', (event) => {
-      const removeBtn = event.target.closest('.remove-btn');
-      if (!removeBtn) return;
+  const removeBtn = event.target.closest('.remove-btn');
+  if (!removeBtn) return;
 
-      const mal_id = Number(removeBtn.dataset.id);
+  const rawId = removeBtn.dataset.id;
+  const title = removeBtn.dataset.title;
 
-      // Filter it out and save back to storage
-      watchedList = watchedList.filter(anime => anime.mal_id !== mal_id);
-      localStorage.setItem("watchedList", JSON.stringify(watchedList));
+  watchedList = watchedList.filter(anime => {
+    const animeId = anime.mal_id ?? anime.malId ?? "";
+    if (rawId && animeId !== "") {
+      return String(animeId) !== String(rawId);
+    }
+    return anime.title !== title;
+  });
 
-      // Redraw the grid
-      renderAnimeCards(getFormattedList(), '#anime-grid', true);
-    });
+  localStorage.setItem("watchedList", JSON.stringify(watchedList));
+  renderAnimeCards(getFormattedList(), '#anime-grid', true);
+});
   </script>
 
 </body>
