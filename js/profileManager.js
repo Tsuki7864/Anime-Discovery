@@ -1,11 +1,5 @@
-// ==========================================
-// 1. THE SETUP: GETTING THE BLANK NOTEBOOK
-// ==========================================
-
-// The label on the front of our notebook so the browser remembers where it is.
 const STORAGE_KEY = 'anime_discovery_profile';
 
-// Our blank notebook with 4 empty sections.
 let userProfile = {
     watched: [],
     wantToWatch: [],
@@ -13,12 +7,6 @@ let userProfile = {
     lengthPreferences: { "short": 0, "medium": 0, "long": 0 } // NEW: Length tracking
 };
 
-
-// ==========================================
-// 2. THE DRAWER: OPENING & CLOSING THE NOTEBOOK
-// ==========================================
-
-// Instruction: Take the notebook out of the drawer
 export function loadUserProfile() {
     const saved = localStorage.getItem(STORAGE_KEY); // Look in the drawer
     if (saved) { // If we found the notebook...
