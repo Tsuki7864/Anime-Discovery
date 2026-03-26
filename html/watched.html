@@ -23,9 +23,10 @@
         </div>
 
         <div class="results-actions">
-          <a href="javascript:history.back()" class="top-link-btn" style="background: #4b5563;">⬅ Back</a> <a
-            href="watched.html" class="top-link-btn">Watched</a>
-          <a href="watched.html" class="top-link-btn" style="opacity: 0.5; pointer-events: none;">watched</a>
+          <a href="results.html" class="top-link-btn back-btn">⬅ Back</a>
+          <button id="btn-suggest" class="primary-action-btn">Smart Recommendations</button>
+          <a href="want.html" class="top-link-btn">Want to Watch</a>
+          <a href="watched.html" class="top-link-btn" style="opacity: 0.5; pointer-events: none;">Watched</a>
         </div>
       </div>
 
@@ -65,23 +66,23 @@
 
     // 4. Handle the Remove Button clicks
     document.querySelector('#anime-grid').addEventListener('click', (event) => {
-  const removeBtn = event.target.closest('.remove-btn');
-  if (!removeBtn) return;
+      const removeBtn = event.target.closest('.remove-btn');
+      if (!removeBtn) return;
 
-  const rawId = removeBtn.dataset.id;
-  const title = removeBtn.dataset.title;
+      const rawId = removeBtn.dataset.id;
+      const title = removeBtn.dataset.title;
 
-  watchedList = watchedList.filter(anime => {
-    const animeId = anime.mal_id ?? anime.malId ?? "";
-    if (rawId && animeId !== "") {
-      return String(animeId) !== String(rawId);
-    }
-    return anime.title !== title;
-  });
+      watchedList = watchedList.filter(anime => {
+        const animeId = anime.mal_id ?? anime.malId ?? "";
+        if (rawId && animeId !== "") {
+          return String(animeId) !== String(rawId);
+        }
+        return anime.title !== title;
+      });
 
-  localStorage.setItem("watchedList", JSON.stringify(watchedList));
-  renderAnimeCards(getFormattedList(), '#anime-grid', true);
-});
+      localStorage.setItem("watchedList", JSON.stringify(watchedList));
+      renderAnimeCards(getFormattedList(), '#anime-grid', true);
+    });
   </script>
 
 </body>

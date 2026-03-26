@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentQuery = searchQuery;
         currentPage = 1;
         toggleLoading(true);
-        const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(searchQuery)}&limit=25&page=1`);
+        const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(searchQuery)}&limit=24&page=1`);
         renderAnimeCards(results);
         toggleLoading(false);
         updateLoadMoreVisibility(results.length);

@@ -14,37 +14,39 @@
         <div class="results-panel">
 
             <div class="results-top-row">
-    <div class="results-left">
-        <h2 class="results-title">
-            Results for: <span id="search-query"></span>
-        </h2>
-    </div>
+                <div class="results-left">
+                    <h2 class="results-title">
+                        Results for: <span id="search-query"></span>
+                    </h2>
+                </div>
 
-    <div class="results-center">
-        <div class="mini-search-box">
-            <input type="text" id="mini-search-input" placeholder="Search anime...">
-            <button onclick="miniSearch()">search</button>
-        </div>
-    </div>
+                <div class="results-center">
+                    <div class="mini-search-box">
+                        <input type="text" id="mini-search-input" placeholder="Search anime...">
+                        <button onclick="miniSearch()">search</button>
+                    </div>
+                </div>
 
-    <div class="results-right">
-    
-    <!-- TOP ROW -->
-    <div class="top-actions-row">
-        <a href="javascript:history.back()" class="top-link-btn back-btn">⬅ Back</a>
-        <button id="btn-suggest" class="primary-action-btn">Smart Recommendations</button>
-    </div>
+                <div class="results-right">
+                    <div class="top-actions-row">
+                        <a href="results.html" class="top-link-btn back-btn">⬅ Back to Results</a>
+                        <button id="btn-suggest" class="primary-action-btn">Smart Recommendations</button>
+                    </div>
 
-    <!-- SECOND ROW -->
-    <div class="list-actions-row">
-        <a href="want.html" class="top-link-btn">Want</a>
-        <a href="watched.html" class="top-link-btn">Watched</a>
-    </div>
-
-</div>
-</div>
+                    <div class="list-actions-row">
+                        <a href="want.html" class="top-link-btn">Want</a>
+                        <a href="watched.html" class="top-link-btn">Watched</a>
+                    </div>
+                </div>
+            </div>
 
             <div id="anime-grid"></div>
+
+            <div class="pagination-controls" id="pagination-controls" style="display: none;">
+                <button id="prev-page-btn" class="primary-action-btn back-btn" disabled>« Previous</button>
+                <span id="page-indicator">Page 1</span>
+                <button id="next-page-btn" class="primary-action-btn">Next »</button>
+            </div>
 
         </div>
     </div>
@@ -56,20 +58,22 @@
     <script type="module" src="../js/script.js"></script>
 
     <script>
+        // 1. Set the search query text on load
         const urlParams = new URLSearchParams(window.location.search);
         const query = urlParams.get('q');
-        document.getElementById('search-query').textContent = query;
-    </script>
-    <script>
+        if (query) {
+            document.getElementById('search-query').textContent = query;
+        }
+
+        // 2. Mini Search Logic
         function miniSearch() {
             const input = document.getElementById('mini-search-input').value.trim();
             if (input === "") return;
-
-            // Instantly redirects them to a fresh search!
+            // Instantly redirects them to a fresh search
             window.location.href = `results.html?q=${encodeURIComponent(input)}`;
         }
 
-        // Allows the user to press 'Enter' to search instead of clicking the icon
+        // 3. Allow 'Enter' key for mini search
         const searchInput = document.getElementById('mini-search-input');
         if (searchInput) {
             searchInput.addEventListener('keypress', function (e) {
