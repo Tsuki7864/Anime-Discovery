@@ -88,7 +88,14 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
                 <img src="${imgUrl}" alt="${anime.title}" loading="lazy">
                 
                 <div class="anime-overlay">
-                    <h3 title="${anime.title}">${anime.title}</h3>
+                    <h3
+                    class="anime-title"
+                    data-main-title="${anime.title || ''}"
+                    data-alt-title="${anime.title_english || anime.title_synonyms?.[0] || ''}"
+                    title="${anime.title || ''}"
+                    >
+                    ${anime.title || ''}
+                    </h3>
                     <p class="anime-year">${airedText}</p>
                     <p class="anime-episodes">${epText}</p>
                     <p class="anime-synopsis">${synopsisText}</p>

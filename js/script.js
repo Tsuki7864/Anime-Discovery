@@ -64,6 +64,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchBtn = document.querySelector('#search-btn');
     const suggestBtn = document.querySelector('#btn-suggest');
     const resultsContainer = document.querySelector('#anime-grid');
+    const titleToggleBtn = document.querySelector('#title-toggle-btn');
+let showingAltTitles = false;
     const loadMoreBtn = document.querySelector('#load-more-btn');
 
     // --- 1. AUTOMATIC SEARCH ON PAGE LOAD ---
@@ -181,12 +183,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 updateSuggestButtonVisibility();
+
             }
         });
     }
 
     // --- INITIALIZE VISIBILITY ON PAGE LOAD ---
     updateSuggestButtonVisibility();
+    // --- TITLE TOGGLE ---
+if (titleToggleBtn) {
+    titleToggleBtn?.addEventListener("click", () => {
+    showingAltTitles = !showingAltTitles;
+
+    document.querySelectorAll(".anime-title").forEach(el => {
+        const main = el.dataset.mainTitle || "";
+        const alt = el.dataset.altTitle || "";
+
+        if (showingAltTitles && alt.trim() !== "") {
+            el.textContent = alt;
+            el.title = alt;
+        } else {
+            el.textContent = main;
+            el.title = main;
+        }
+    });
+
+    // 🔥 VISUAL TOGGLE STATE
+    if (showingAltTitles) {
+        titleToggleBtn.classList.add("active");
+        titleToggleBtn.textContent = "Alt Titles: ON";
+    } else {
+        titleToggleBtn.classList.remove("active");
+        titleToggleBtn.textContent = "Alt Titles: OFF";
+    }
+});
+}
 
 }); // <-- Notice how the DOMContentLoaded block finally closes HERE!
 
