@@ -624,3 +624,11 @@ body::before {
     opacity: 0.05;
     pointer-events: none;
 }
+.toggle-btn {
+    transition: all 0.2s ease;
+}
+
+.toggle-btn.active {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.8);
+}
