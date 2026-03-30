@@ -67,34 +67,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resultsContainer = document.querySelector('#anime-grid');
     const titleToggleBtn = document.querySelector('#title-toggle-btn');
     let showingAltTitles = false;
-    const loadMoreBtn = document.querySelector('#load-more-btn');
+    // Grab our new pagination buttons
+    const prevBtn = document.querySelector('#prev-page-btn');
+    const nextBtn = document.querySelector('#next-page-btn');
 
     // --- 1. AUTOMATIC SEARCH ON PAGE LOAD ---
     const urlParams = new URLSearchParams(window.location.search);
     const searchQuery = urlParams.get('q');
 
     if (searchQuery && resultsContainer) {
-        currentQuery = searchQuery;
-        currentPage = 1;
-        toggleLoading(true);
-        const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(searchQuery)}&limit=24&page=1`);
-        renderAnimeCards(results);
-        toggleLoading(false);
-        updateLoadMoreVisibility(results.length);
+        loadSearchPage(searchQuery, 1);
     }
 
-    // --- 2. LOAD MORE BUTTON ---
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', async () => {
-            currentPage++;
-            toggleLoading(true);
-            const results = await fetchFromJikan(
-                `/anime?q=${encodeURIComponent(currentQuery)}&limit=25&page=${currentPage}`
-            );
-            // Assuming your ui.js renderAnimeCards accepts an append boolean as the 4th argument
-            renderAnimeCards(results, '#anime-grid', false, true);
-            toggleLoading(false);
-            updateLoadMoreVisibility(results.length);
+    // --- 2. PAGINATION BUTTONS (Replaces Load More) ---
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) loadSearchPage(currentQuery, currentPage - 1);
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            loadSearchPage(currentQuery, currentPage + 1);
+        });
+    }
+
+    // --- 3. SEARCH BUTTON ---
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            const query = document.querySelector('#search-input').value.trim();
+            if (!query) return;
+            loadSearchPage(query, 1); // Triggers our new, clean function!
         });
     }
 
@@ -221,10 +224,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // --- HELPER FUNCTIONS ---
-function updateLoadMoreVisibility(resultCount) {
-    const loadMoreBtn = document.querySelector('#load-more-btn');
-    if (!loadMoreBtn) return;
-    loadMoreBtn.style.display = resultCount === 25 ? 'block' : 'none';
+// --- PAGINATION HELPER FUNCTIONS ---
+async function loadSearchPage(query, pageNumber) {
+    const grid = document.querySelector('#anime-grid');
+    if (!grid) return;
+
+    currentQuery = query;
+    currentPage = pageNumber;
+
+    toggleLoading(true);
+
+    // Fetch using your teammate's bulletproof function
+    const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=25&page=${currentPage}`);
+
+    renderAnimeCards(results);
+    toggleLoading(false);
+
+    updatePaginationButtons(results.length);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updatePaginationButtons(resultCount) {
+    const paginationControls = document.querySelector('#pagination-controls');
+    const prevBtn = document.querySelector('#prev-page-btn');
+    const nextBtn = document.querySelector('#next-page-btn');
+    const pageIndicator = document.querySelector('#page-indicator');
+
+    if (paginationControls) {
+        // Hide controls entirely if we are on page 1 and there are no results
+        paginationControls.style.display = (resultCount === 0 && currentPage === 1) ? 'none' : 'flex';
+    }
+
+    if (prevBtn && nextBtn && pageIndicator) {
+        pageIndicator.textContent = `Page ${currentPage}`;
+        prevBtn.disabled = currentPage === 1;
+
+        // If we got fewer than 25 results, we reached the end of the list!
+        nextBtn.disabled = resultCount < 25;
+    }
 }
 
 function updateSuggestButtonVisibility() {
