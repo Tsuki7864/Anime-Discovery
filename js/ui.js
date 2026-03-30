@@ -56,7 +56,7 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
 
         if (isListView) {
             buttonHTML = `
-                <button class="remove-btn" data-id="${anime.mal_id}">❌ Remove</button>
+        <button class="remove-btn" data-id="${anime.mal_id ?? anime.malId ?? ''}" data-title="${anime.title}">❌</button>
             `;
         } else {
             // 1. Check the database to see if this anime is already saved
@@ -88,7 +88,14 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
                 <img src="${imgUrl}" alt="${anime.title}" loading="lazy">
                 
                 <div class="anime-overlay">
-                    <h3 title="${anime.title}">${anime.title}</h3>
+                    <h3
+                    class="anime-title"
+                    data-main-title="${anime.title || ''}"
+                    data-alt-title="${anime.title_english || anime.title_synonyms?.[0] || ''}"
+                    title="${anime.title || ''}"
+                    >
+                    ${anime.title || ''}
+                    </h3>
                     <p class="anime-year">${airedText}</p>
                     <p class="anime-episodes">${epText}</p>
                     <p class="anime-synopsis">${synopsisText}</p>
