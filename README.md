@@ -21,4 +21,6 @@ Key features:
  4. open the project folder in VS Code. 
  5. Make sure these files exist 
 
- Usage instruction: (Create Instruction for how the user is supposed to use / experiance the website)
+ Usage instruction: 
+  1. Press run 
+  2. type what anime you have seen 
