@@ -21,9 +21,4 @@ Key features:
  4. open the project folder in VS Code. 
  5. Make sure these files exist 
 
- Usage instruction: 
- 1. Open index.html in VS Code.
- 2. Right-click the file. 
- 3. click "Open with Live Server 
- 4. The project will open in yout browser 
- 5. Open DevTool console to view logs and test logic 
+ Usage instruction: (Create Instruction for how the user is supposed to use / experiance the website)

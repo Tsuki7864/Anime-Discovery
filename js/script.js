@@ -8,10 +8,13 @@ import {
 import { calculateRecommendations } from './algorithm.js';
 import { renderAnimeCards, toggleLoading } from './ui.js';
 
+let currentPage = 1;
+let currentQuery = "";
 const BASE_URL = "https://api.jikan.moe/v4";
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- THE BULLETPROOF FETCH INJECTED INTO TEAMMATE'S CODE ---
+
 async function fetchFromJikan(endpoint, retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -56,8 +59,6 @@ function safeParseDataset(value) {
     }
 }
 
-let currentPage = 1;
-let currentQuery = '';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Grab all our elements
@@ -65,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const suggestBtn = document.querySelector('#btn-suggest');
     const resultsContainer = document.querySelector('#anime-grid');
     const titleToggleBtn = document.querySelector('#title-toggle-btn');
-let showingAltTitles = false;
+    let showingAltTitles = false;
     const loadMoreBtn = document.querySelector('#load-more-btn');
 
     // --- 1. AUTOMATIC SEARCH ON PAGE LOAD ---
@@ -188,38 +189,36 @@ let showingAltTitles = false;
         });
     }
 
-    // --- INITIALIZE VISIBILITY ON PAGE LOAD ---
     updateSuggestButtonVisibility();
     // --- TITLE TOGGLE ---
-if (titleToggleBtn) {
-    titleToggleBtn?.addEventListener("click", () => {
-    showingAltTitles = !showingAltTitles;
+    if (titleToggleBtn) {
+        titleToggleBtn?.addEventListener("click", () => {
+            showingAltTitles = !showingAltTitles;
 
-    document.querySelectorAll(".anime-title").forEach(el => {
-        const main = el.dataset.mainTitle || "";
-        const alt = el.dataset.altTitle || "";
+            document.querySelectorAll(".anime-title").forEach(el => {
+                const main = el.dataset.mainTitle || "";
+                const alt = el.dataset.altTitle || "";
 
-        if (showingAltTitles && alt.trim() !== "") {
-            el.textContent = alt;
-            el.title = alt;
-        } else {
-            el.textContent = main;
-            el.title = main;
-        }
-    });
+                if (showingAltTitles && alt.trim() !== "") {
+                    el.textContent = alt;
+                    el.title = alt;
+                } else {
+                    el.textContent = main;
+                    el.title = main;
+                }
+            });
 
-    // 🔥 VISUAL TOGGLE STATE
-    if (showingAltTitles) {
-        titleToggleBtn.classList.add("active");
-        titleToggleBtn.textContent = "Alt Titles: ON";
-    } else {
-        titleToggleBtn.classList.remove("active");
-        titleToggleBtn.textContent = "Alt Titles: OFF";
+            if (showingAltTitles) {
+                titleToggleBtn.classList.add("active");
+                titleToggleBtn.textContent = "ENG";
+            } else {
+                titleToggleBtn.classList.remove("active");
+                titleToggleBtn.textContent = "JP";
+            }
+        });
     }
-});
-}
 
-}); // <-- Notice how the DOMContentLoaded block finally closes HERE!
+});
 
 // --- HELPER FUNCTIONS ---
 function updateLoadMoreVisibility(resultCount) {
