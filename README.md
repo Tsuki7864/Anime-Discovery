@@ -22,5 +22,6 @@ Key features:
  5. Make sure these files exist 
 
  Usage instruction: 
-  1. Press run 
-  2. type what anime you have seen 
+  2. Search for anime 
+  3. hover over options select want or watched 
+  4. press smart recommendations 
