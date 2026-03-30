@@ -22,8 +22,5 @@ Key features:
  5. Make sure these files exist 
 
  Usage instruction: 
- 1. Open index.html in VS Code.
- 2. Right-click the file. 
- 3. click "Open with Live Server 
- 4. The project will open in yout browser 
- 5. Open DevTool console to view logs and test logic 
+  1. Press run 
+  2. type what anime you have seen 
