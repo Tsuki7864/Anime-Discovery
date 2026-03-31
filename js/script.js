@@ -79,15 +79,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadSearchPage(searchQuery, 1);
     }
 
-    // --- 2. PAGINATION BUTTONS (Replaces Load More) ---
+    // --- 2. PAGINATION BUTTONS ---
     if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            if (currentPage > 1) loadSearchPage(currentQuery, currentPage - 1);
+        prevBtn.addEventListener('click', (event) => {
+            event.preventDefault(); // Stops the button from accidentally refreshing the page
+            if (currentPage > 1) {
+                loadSearchPage(currentQuery, currentPage - 1);
+            }
         });
     }
 
     if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
+        nextBtn.addEventListener('click', (event) => {
+            event.preventDefault(); // Stops the button from accidentally refreshing the page
             loadSearchPage(currentQuery, currentPage + 1);
         });
     }
@@ -117,14 +121,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateLoadMoreVisibility(results.length);
         });
     }
+    // --- PRESS 'ENTER' TO SEARCH ---
+    const searchInput = document.querySelector('#search-input');
 
+    if (searchInput && searchBtn) {
+        searchInput.addEventListener('keypress', (event) => {
+            // Check if the key pressed was 'Enter'
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevents the page from accidentally refreshing
+                searchBtn.click();      // Triggers the exact same code as clicking the button!
+            }
+        });
+    }
+    // --- 4. SUGGEST BUTTON ---
     // --- 4. SUGGEST BUTTON ---
     if (suggestBtn) {
         suggestBtn.addEventListener('click', async () => {
+            // 1. Lock the button immediately to prevent spam
+            suggestBtn.disabled = true;
+            const originalText = suggestBtn.textContent;
+            suggestBtn.textContent = "Generating...";
+            suggestBtn.style.opacity = "0.5";
+            suggestBtn.style.cursor = "not-allowed";
+
             toggleLoading(true);
             try {
                 const randomPage = Math.floor(Math.random() * 5) + 1;
-                const candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=15`);
+                const candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=25`);
 
                 const userProfile = {
                     genrePreferences: getGenrePreferences(),
@@ -137,10 +160,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const finalPicks = scored.filter(anime => !exclusions.has(anime.mal_id));
                 finalPicks.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
 
+                // Change the page title to indicate these are suggestions
+                const titleSpan = document.getElementById('search-query');
+                if (titleSpan) titleSpan.textContent = "Your Smart Recommendations";
+
+                // Hide pagination controls since suggestions don't have pages
+                const paginationControls = document.getElementById('pagination-controls');
+                if (paginationControls) paginationControls.style.display = 'none';
+
                 renderAnimeCards(finalPicks.slice(0, 10));
+
+                // 2. Start the 3-second cooldown timer before they can click it again
+                suggestBtn.textContent = "Wait 3s...";
+                setTimeout(() => {
+                    suggestBtn.disabled = false;
+                    suggestBtn.textContent = originalText;
+                    suggestBtn.style.opacity = "1";
+                    suggestBtn.style.cursor = "pointer";
+                }, 3000);
+
             } catch (err) {
                 console.error(err);
                 alert("Error generating suggestions.");
+                suggestBtn.disabled = false;
+                suggestBtn.textContent = originalText;
+                suggestBtn.style.opacity = "1";
+                suggestBtn.style.cursor = "pointer";
             } finally {
                 toggleLoading(false);
             }
@@ -237,6 +282,13 @@ async function loadSearchPage(query, pageNumber) {
     // Fetch using your teammate's bulletproof function
     const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}`);
 
+    if (results.length === 0) {
+        grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
+        updatePaginationButtons(0); // This forces the Next button to hide!
+        toggleLoading(false);
+        return; // Stop running the rest of the function
+    }
+
     renderAnimeCards(results);
     toggleLoading(false);
 
@@ -251,16 +303,26 @@ function updatePaginationButtons(resultCount) {
     const pageIndicator = document.querySelector('#page-indicator');
 
     if (paginationControls) {
-        // Hide controls entirely if we are on page 1 and there are no results
+        // Hide the entire control bar if we are on page 1 and there are absolutely no results
         paginationControls.style.display = (resultCount === 0 && currentPage === 1) ? 'none' : 'flex';
     }
 
     if (prevBtn && nextBtn && pageIndicator) {
         pageIndicator.textContent = `Page ${currentPage}`;
-        prevBtn.disabled = currentPage === 1;
 
-        // If we got fewer than 15 results, we reached the end of the list!
-        nextBtn.disabled = resultCount < 15;
+        // Hide "Previous" if on Page 1, otherwise show it
+        if (currentPage === 1) {
+            prevBtn.style.display = 'none';
+        } else {
+            prevBtn.style.display = 'inline-block';
+        }
+
+        // Hide "Next" if we got fewer than 25 results (meaning no more pages), otherwise show it
+        if (resultCount < 15) {
+            nextBtn.style.display = 'none';
+        } else {
+            nextBtn.style.display = 'inline-block';
+        }
     }
 }
 
