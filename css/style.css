@@ -40,7 +40,7 @@
  body {
     min-height: 100vh;
     background: linear-gradient(135deg, #0a0a2a, #1a0033, #000000);
-    background-attachment: fixed; /* 🔥 THIS MAKES IT CONTINUOUS */
+    background-attachment: fixed; 
     background-size: cover;
     display: flex;
     justify-content: center;
@@ -560,7 +560,7 @@
     padding: 8px 14px;
     border-radius: 20px;
     border: none;
-    background: #2563eb;
+    background: #090979;
     color: white;
     cursor: pointer;
     font-weight: 600;
