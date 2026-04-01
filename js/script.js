@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentPage = 1;       // reset to page 1 on every new search
 
             toggleLoading(true);
-            const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(query)}&limit=25&page=1`);
+            const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(query)}&limit=15&page=1`);
             renderAnimeCards(results);
             toggleLoading(false);
             updateLoadMoreVisibility(results.length);
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             toggleLoading(true);
             try {
                 const randomPage = Math.floor(Math.random() * 5) + 1;
-                const candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=25`);
+                const candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=15`);
 
                 const userProfile = {
                     genrePreferences: getGenrePreferences(),
@@ -235,7 +235,7 @@ async function loadSearchPage(query, pageNumber) {
     toggleLoading(true);
 
     // Fetch using your teammate's bulletproof function
-    const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=25&page=${currentPage}`);
+    const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}`);
 
     renderAnimeCards(results);
     toggleLoading(false);
@@ -259,8 +259,8 @@ function updatePaginationButtons(resultCount) {
         pageIndicator.textContent = `Page ${currentPage}`;
         prevBtn.disabled = currentPage === 1;
 
-        // If we got fewer than 25 results, we reached the end of the list!
-        nextBtn.disabled = resultCount < 25;
+        // If we got fewer than 15 results, we reached the end of the list!
+        nextBtn.disabled = resultCount < 15;
     }
 }
 
