@@ -73,6 +73,8 @@
 .subtitle {
     margin-top: 1rem;
     font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.82);
+    text-shadow: 0 0 8px rgba(140, 0, 255, 0.25);
     opacity: 0;
     animation: fadeIn 1s ease forwards;
     animation-delay: 1.3s;
