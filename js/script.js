@@ -105,22 +105,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- 3. SEARCH BUTTON ---
-    if (searchBtn) {
-        searchBtn.addEventListener('click', async () => {
-            const query = document.querySelector('#search-input').value.trim();
-            if (!query) return;
-
-            currentQuery = query;  // store for Load More
-            currentPage = 1;       // reset to page 1 on every new search
-
-            toggleLoading(true);
-            const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(query)}&limit=15&page=1`);
-            renderAnimeCards(results);
-            toggleLoading(false);
-            updateLoadMoreVisibility(results.length);
-        });
-    }
     // --- PRESS 'ENTER' TO SEARCH ---
     const searchInput = document.querySelector('#search-input');
 
@@ -133,7 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
-    // --- 4. SUGGEST BUTTON ---
     // --- 4. SUGGEST BUTTON ---
     if (suggestBtn) {
         suggestBtn.addEventListener('click', async () => {
@@ -162,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Change the page title to indicate these are suggestions
                 const titleSpan = document.getElementById('search-query');
-                if (titleSpan) titleSpan.textContent = "Your Smart Recommendations";
+                if (titleSpan) titleSpan.textContent = "Your Recommendations";
 
                 // Hide pagination controls since suggestions don't have pages
                 const paginationControls = document.getElementById('pagination-controls');
@@ -265,7 +248,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+    // This listens for the user clicking the browser's Back or Forward buttons
+    window.addEventListener('popstate', () => {
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('q');
+        const p = parseInt(params.get('page')) || 1;
 
+        if (q) {
+            // We use replaceState so we don't accidentally create an infinite loop of back-button clicks
+            loadSearchPage(q, p);
+        }
+    });
 });
 
 // --- HELPER FUNCTIONS ---
@@ -276,6 +269,10 @@ async function loadSearchPage(query, pageNumber) {
 
     currentQuery = query;
     currentPage = pageNumber;
+
+    // --- ADD THESE TWO LINES FOR THE BACK BUTTON ---
+    const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}&page=${pageNumber}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
 
     toggleLoading(true);
 
