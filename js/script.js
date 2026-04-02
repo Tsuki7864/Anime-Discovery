@@ -75,6 +75,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const searchQuery = urlParams.get('q');
 
+    // --- SAFE SEARCH TOGGLE LOGIC ---
+    const safeSearchToggle = document.getElementById('safe-search-toggle');
+   
+    // Check local storage for a saved preference. If none exists, default to 'true' (Safe).
+    const isSafeSearchSaved = localStorage.getItem('safeSearch');
+    let isSfwActive = isSafeSearchSaved === null ? true : isSafeSearchSaved === 'true';
+
+    if (safeSearchToggle) {
+        // Set the visual checkbox to match our saved data
+        safeSearchToggle.checked = isSfwActive;
+
+        // Listen for clicks to update the setting
+        safeSearchToggle.addEventListener('change', (e) => {
+            isSfwActive = e.target.checked;
+            localStorage.setItem('safeSearch', isSfwActive);
+        });
+    }
+
+    // A quick helper function we can use in our API calls
+    function getSfwString() {
+        return isSfwActive ? '&sfw=true' : ''; // Returns the SFW parameter or nothing!
+    }
+
     if (searchQuery && resultsContainer) {
         loadSearchPage(searchQuery, 1);
     }
