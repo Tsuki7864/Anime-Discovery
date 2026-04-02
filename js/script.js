@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- SAFE SEARCH TOGGLE LOGIC ---
     const safeSearchToggle = document.getElementById('safe-search-toggle');
-   
+
     // Check local storage for a saved preference. If none exists, default to 'true' (Safe).
     const isSafeSearchSaved = localStorage.getItem('safeSearch');
     let isSfwActive = isSafeSearchSaved === null ? true : isSafeSearchSaved === 'true';
@@ -153,7 +153,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             toggleLoading(true);
             try {
                 const randomPage = Math.floor(Math.random() * 5) + 1;
-                const candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=25`);
+                const sfwParam = getSfwString();
+                const candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=25${sfwParam}`);
 
                 const userProfile = {
                     genrePreferences: getGenrePreferences(),
@@ -299,9 +300,9 @@ async function loadSearchPage(query, pageNumber) {
 
     toggleLoading(true);
 
-    // Fetch using your teammate's bulletproof function
-    const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}`);
+    // Fetch using your teammate's bulletproof function + dynamic Safe Search
 
+    const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}`);
     if (results.length === 0) {
         grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
         updatePaginationButtons(0); // This forces the Next button to hide!
