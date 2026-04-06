@@ -13,6 +13,13 @@ let currentQuery = "";
 const BASE_URL = "https://api.jikan.moe/v4";
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+let isSfwActive = localStorage.getItem('safeSearch') === null
+    ? true
+    : localStorage.getItem('safeSearch') === 'true';
+
+function getSfwString() {
+    return isSfwActive ? '&sfw=true' : '';
+}
 // --- THE BULLETPROOF FETCH INJECTED INTO TEAMMATE'S CODE ---
 
 async function fetchFromJikan(endpoint, retries = 3) {
@@ -79,9 +86,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const safeSearchToggle = document.getElementById('safe-search-toggle');
 
     // Check local storage for a saved preference. If none exists, default to 'true' (Safe).
-    const isSafeSearchSaved = localStorage.getItem('safeSearch');
-    let isSfwActive = isSafeSearchSaved === null ? true : isSafeSearchSaved === 'true';
-
     if (safeSearchToggle) {
         // Set the visual checkbox to match our saved data
         safeSearchToggle.checked = isSfwActive;
@@ -93,10 +97,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // A quick helper function we can use in our API calls
-    function getSfwString() {
-        return isSfwActive ? '&sfw=true' : ''; // Returns the SFW parameter or nothing!
-    }
 
     if (searchQuery && resultsContainer) {
         loadSearchPage(searchQuery, 1);
@@ -302,8 +302,7 @@ async function loadSearchPage(query, pageNumber) {
 
     // Fetch using your teammate's bulletproof function + dynamic Safe Search
 
-    const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}`);
-    if (results.length === 0) {
+    const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}${getSfwString()}`); if (results.length === 0) {
         grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
         updatePaginationButtons(0); // This forces the Next button to hide!
         toggleLoading(false);
@@ -360,6 +359,3 @@ function updateSuggestButtonVisibility() {
         suggestBtn.style.display = 'inline-block';
     }
 }
-
-// Run this once as soon as the page loads!
-document.addEventListener('DOMContentLoaded', updateSuggestButtonVisibility);
