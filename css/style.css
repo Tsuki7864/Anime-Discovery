@@ -628,3 +628,9 @@ body::before {
     margin-bottom: 40px;
     /* Breathing room below */
 }
+.small-toggle {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border-radius: 16px;
+    min-width: unset;
+}

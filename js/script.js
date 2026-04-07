@@ -92,24 +92,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchQuery = urlParams.get('q');
 
     // --- SAFE SEARCH TOGGLE LOGIC ---
-    const safeSearchBtn = document.getElementById('safe-search-btn');
+const safeSearchBtn = document.getElementById('safe-search-btn');
 
-    if (safeSearchBtn) {
-        safeSearchBtn.textContent = isSfwActive ? 'SFW: ON' : 'SFW: OFF';
-        if (isSfwActive) safeSearchBtn.classList.add('active');
-
-        safeSearchBtn.addEventListener('click', () => {
-            isSfwActive = !isSfwActive;
-            localStorage.setItem('safeSearch', isSfwActive);
-
-            safeSearchBtn.textContent = isSfwActive ? 'SFW: ON' : 'SFW: OFF';
-            if (isSfwActive) {
-                safeSearchBtn.classList.add('active');
-            } else {
-                safeSearchBtn.classList.remove('active');
-            }
-        });
+if (safeSearchBtn) {
+    function updateSafeSearchButton() {
+        if (isSfwActive) {
+            safeSearchBtn.classList.add('active');
+            safeSearchBtn.textContent = 'SFW: ON';
+        } else {
+            safeSearchBtn.classList.remove('active');
+            safeSearchBtn.textContent = 'SFW: OFF';
+        }
     }
+
+    updateSafeSearchButton();
+
+    safeSearchBtn.addEventListener('click', async () => {
+        isSfwActive = !isSfwActive;
+        localStorage.setItem('safeSearch', String(isSfwActive));
+        updateSafeSearchButton();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSearch = urlParams.get('q');
+
+        if (currentSearch && resultsContainer) {
+            await loadSearchPage(currentSearch, currentPage || 1);
+        }
+    });
+}
 
 
     if (searchQuery && resultsContainer) {
