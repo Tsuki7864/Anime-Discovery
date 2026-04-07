@@ -20,6 +20,15 @@ let isSfwActive = localStorage.getItem('safeSearch') === null
 function getSfwString() {
     return isSfwActive ? '&sfw=true' : '';
 }
+// AFTER — add below getSfwString()
+function filterExplicitContent(animeArray) {
+    if (!isSfwActive) return animeArray;
+    return animeArray.filter(anime => {
+        const rating = anime.rating || "";
+        // Rx = Hentai, R+ = Mild Nudity — both get filtered
+        return !rating.includes("Rx") && !rating.includes("R+");
+    });
+}
 // --- THE BULLETPROOF FETCH INJECTED INTO TEAMMATE'S CODE ---
 
 async function fetchFromJikan(endpoint, retries = 3) {
@@ -83,17 +92,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchQuery = urlParams.get('q');
 
     // --- SAFE SEARCH TOGGLE LOGIC ---
-    const safeSearchToggle = document.getElementById('safe-search-toggle');
+    const safeSearchBtn = document.getElementById('safe-search-btn');
 
-    // Check local storage for a saved preference. If none exists, default to 'true' (Safe).
-    if (safeSearchToggle) {
-        // Set the visual checkbox to match our saved data
-        safeSearchToggle.checked = isSfwActive;
+    if (safeSearchBtn) {
+        safeSearchBtn.textContent = isSfwActive ? 'SFW: ON' : 'SFW: OFF';
+        if (isSfwActive) safeSearchBtn.classList.add('active');
 
-        // Listen for clicks to update the setting
-        safeSearchToggle.addEventListener('change', (e) => {
-            isSfwActive = e.target.checked;
+        safeSearchBtn.addEventListener('click', () => {
+            isSfwActive = !isSfwActive;
             localStorage.setItem('safeSearch', isSfwActive);
+
+            safeSearchBtn.textContent = isSfwActive ? 'SFW: ON' : 'SFW: OFF';
+            if (isSfwActive) {
+                safeSearchBtn.classList.add('active');
+            } else {
+                safeSearchBtn.classList.remove('active');
+            }
         });
     }
 
@@ -154,8 +168,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const randomPage = Math.floor(Math.random() * 5) + 1;
                 const sfwParam = getSfwString();
-                const candidates = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=25${sfwParam}`);
-
+                let candidates = await fetchFromJikan(
+                    `/top/anime?filter=bypopularity&page=${randomPage}&limit=25${sfwParam}`
+                );
+                candidates = filterExplicitContent(candidates);
                 const userProfile = {
                     genrePreferences: getGenrePreferences(),
                     lengthPreferences: getLengthPreferences()
@@ -302,7 +318,11 @@ async function loadSearchPage(query, pageNumber) {
 
     // Fetch using your teammate's bulletproof function + dynamic Safe Search
 
-    const results = await fetchFromJikan(`/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}${getSfwString()}`); if (results.length === 0) {
+    let results = await fetchFromJikan(
+        `/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}${getSfwString()}`
+    );
+    results = filterExplicitContent(results);
+    if (results.length === 0) {
         grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
         updatePaginationButtons(0); // This forces the Next button to hide!
         toggleLoading(false);
@@ -349,6 +369,13 @@ function updatePaginationButtons(resultCount) {
 function updateSuggestButtonVisibility() {
     const suggestBtn = document.getElementById('btn-suggest');
     if (!suggestBtn) return;
+
+    // Check if we are on the want or watched page
+    const currentUrl = window.location.href.toLowerCase();
+    if (currentUrl.includes('want') || currentUrl.includes('watched')) {
+        suggestBtn.style.display = 'none';
+        return; // Stop running
+    }
 
     const watched = JSON.parse(localStorage.getItem('watchedList')) || [];
     const want = JSON.parse(localStorage.getItem('wantList')) || [];
