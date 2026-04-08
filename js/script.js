@@ -98,10 +98,10 @@ if (safeSearchBtn) {
     function updateSafeSearchButton() {
         if (isSfwActive) {
             safeSearchBtn.classList.add('active');
-            safeSearchBtn.textContent = 'SFW: ON';
+            safeSearchBtn.textContent = 'SAFE SEARCH: ON';
         } else {
             safeSearchBtn.classList.remove('active');
-            safeSearchBtn.textContent = 'SFW: OFF';
+            safeSearchBtn.textContent = 'SAFE SEARCH: OFF';
         }
     }
 
