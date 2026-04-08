@@ -9,7 +9,10 @@ export function calculateRecommendations(candidates, userProfile) {
     // Only grab genres that actually have points (> 0)
     const topGenres = genreArray.filter(g => g[1] > 0).slice(0, 2).map(g => g[0]);
 
-    return candidates.map(anime => {
+    let maxRawScore = 1; // Prevents division by zero later
+
+    // --- STEP 1: Calculate raw scores for everyone ---
+    candidates.forEach(anime => {
         let score = 0;
         let hasDominantGenre = false;
 
@@ -56,7 +59,23 @@ export function calculateRecommendations(candidates, userProfile) {
             }
         }
 
-        anime.matchScore = score;
+        anime.rawScore = score;
+
+        // Track the highest score in this batch for our percentage math
+        if (score > maxRawScore) {
+            maxRawScore = score;
+        }
+    });
+
+    // --- STEP 2: Convert raw scores to realistic percentages ---
+    return candidates.map(anime => {
+        let percentage = Math.round((anime.rawScore / maxRawScore) * 100);
+
+        // Cap the percentages so the UI feels authentic and realistic
+        if (percentage > 98) percentage = 98;
+        if (percentage < 15) percentage = 15;
+
+        anime.matchScore = percentage;
         return anime;
     });
 }

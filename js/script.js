@@ -318,7 +318,7 @@ async function loadSearchPage(query, pageNumber) {
     if (!grid) return;
 
     currentQuery = query;
-    currentPage = pageNumber;
+    currentPage = parseInt(pageNumber, 10);
 
     // --- ADD THESE TWO LINES FOR THE BACK BUTTON ---
     const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}&page=${pageNumber}`;
@@ -329,7 +329,7 @@ async function loadSearchPage(query, pageNumber) {
     // Fetch using your teammate's bulletproof function + dynamic Safe Search
 
     let results = await fetchFromJikan(
-        `/anime?q=${encodeURIComponent(currentQuery)}&limit=15&page=${currentPage}${getSfwString()}`
+        `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}${getSfwString()}`
     );
     results = filterExplicitContent(results);
     if (results.length === 0) {
