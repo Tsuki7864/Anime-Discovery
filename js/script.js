@@ -331,7 +331,9 @@ async function loadSearchPage(query, pageNumber) {
     let results = await fetchFromJikan(
         `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}${getSfwString()}`
     );
+    
     results = filterExplicitContent(results);
+    results.sort((a, b) => (b.score || 0) - (a.score || 0));
     if (results.length === 0) {
         grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
         updatePaginationButtons(0); // This forces the Next button to hide!
