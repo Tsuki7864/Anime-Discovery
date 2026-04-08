@@ -1,0 +1,66 @@
+.container {
+    text-align: center;
+    margin-top: 60px;
+}
+
+.typing {
+    font-size: 3.5rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 3px solid var(--cursor-color);
+    width: 0;
+    animation:
+        typing 1.5s steps(15, end) forwards,
+        blink 0.7s infinite;
+    color: white;
+    text-shadow: 0 0 10px rgba(140, 0, 255, 0.6);
+}
+
+.subtitle {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.82);
+    text-shadow: 0 0 8px rgba(140, 0, 255, 0.25);
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+    animation-delay: 1.3s;
+}
+
+.search-box {
+    margin-top: 2rem;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+    animation-delay: 1.35s;
+}
+
+.search-box input {
+    width: 320px;
+    padding: 10px 15px;
+    border-radius: 25px;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    background: var(--input-bg);
+    color: var(--input-text);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.search-box button {
+    padding: 0.7rem 1.4rem;
+    border-radius: 25px;
+    border: none;
+    background: var(--button-bg);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.search-box button:hover {
+    background: var(--button-hover);
+}

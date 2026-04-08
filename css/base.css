@@ -1,0 +1,61 @@
+:root {
+    --bg-gradient: linear-gradient(135deg, #ffffff, #e6e9f0);
+    --text-color: #1a1a1a;
+    --cursor-color: #1a1a1a;
+    --input-bg: #f3f4f6;
+    --input-text: #000000;
+    --button-bg: #090979;
+    --button-hover: #0b0bd4;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-gradient: linear-gradient(135deg, #020024, #090979, #000000);
+        --text-color: #ffffff;
+        --cursor-color: rgba(255, 255, 255, 0.75);
+        --input-bg: #ffffff;
+        --input-text: #000000;
+        --button-bg: #090979;
+        --button-hover: #0b0bd4;
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0a2a, #1a0033, #000000);
+    background-attachment: fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(white 1px, transparent 1px);
+    background-size: 2px 2px;
+    opacity: 0.05;
+    pointer-events: none;
+}
+
+@keyframes typing {
+    from { width: 0; }
+    to { width: 15ch; }
+}
+
+@keyframes blink {
+    50% { border-color: transparent; }
+}
+
+@keyframes fadeIn {
+    to { opacity: 0.85; }
+}
