@@ -10,6 +10,7 @@ import { renderAnimeCards, toggleLoading } from './ui.js';
 
 let currentPage = 1;
 let currentQuery = "";
+let isViewingSuggestions = false; // <-- ADD THIS
 const BASE_URL = "https://api.jikan.moe/v4";
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -115,8 +116,11 @@ if (safeSearchBtn) {
         const urlParams = new URLSearchParams(window.location.search);
         const currentSearch = urlParams.get('q');
 
-        if (currentSearch && resultsContainer) {
+        if (!isViewingSuggestions && currentSearch && resultsContainer) {
             await loadSearchPage(currentSearch, currentPage || 1);
+        } else if (isViewingSuggestions) {
+            // Re-trigger the suggest button so it generates new SFW suggestions!
+            suggestBtn.click();
         }
     });
 }
@@ -176,34 +180,52 @@ if (safeSearchBtn) {
 
             toggleLoading(true);
             try {
-                const randomPage = Math.floor(Math.random() * 5) + 1;
+                isViewingSuggestions = true; // Tell the app we are looking at suggestions
+                
                 const sfwParam = getSfwString();
-                let candidates = await fetchFromJikan(
-                    `/top/anime?filter=bypopularity&page=${randomPage}&limit=25${sfwParam}`
-                );
-                candidates = filterExplicitContent(candidates);
                 const userProfile = {
                     genrePreferences: getGenrePreferences(),
                     lengthPreferences: getLengthPreferences()
                 };
-
-                const scored = calculateRecommendations(candidates, userProfile);
                 const exclusions = new Set(getExcludedIds());
 
-                const finalPicks = scored.filter(anime => !exclusions.has(anime.mal_id));
+                let finalPicks = [];
+                let fetchAttempts = 0;
+
+                // Keep fetching until we have at least 12 fresh anime, OR we've tried 4 times
+                while (finalPicks.length < 12 && fetchAttempts < 4) {
+                    const randomPage = Math.floor(Math.random() * 10) + 1; 
+                    
+                    let batch = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=25${sfwParam}`);
+                    batch = filterExplicitContent(batch);
+                    
+                    let scoredBatch = calculateRecommendations(batch, userProfile);
+                    
+                    // Filter out ones we already saved
+                    let validPicks = scoredBatch.filter(anime => !exclusions.has(anime.mal_id));
+                    
+                    finalPicks = [...finalPicks, ...validPicks];
+                    fetchAttempts++;
+                }
+
+                // Remove any duplicates just in case the random pages overlapped
+                finalPicks = [...new Map(finalPicks.map(anime => [anime.mal_id, anime])).values()];
+
+                // Sort them highest to lowest
                 finalPicks.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
 
-                // Change the page title to indicate these are suggestions
+                // Change the page title
                 const titleSpan = document.getElementById('search-query');
                 if (titleSpan) titleSpan.textContent = "Your Recommendations";
 
-                // Hide pagination controls since suggestions don't have pages
+                // Hide pagination
                 const paginationControls = document.getElementById('pagination-controls');
                 if (paginationControls) paginationControls.style.display = 'none';
 
-                renderAnimeCards(finalPicks.slice(0, 10));
+                // Render exactly 12 anime for your 6-column grid!
+                renderAnimeCards(finalPicks.slice(0, 12));
 
-                // 2. Start the 3-second cooldown timer before they can click it again
+                // ... cooldown timer ...
                 suggestBtn.textContent = "Wait 3s...";
                 setTimeout(() => {
                     suggestBtn.disabled = false;
@@ -305,43 +327,45 @@ if (safeSearchBtn) {
         const p = parseInt(params.get('page')) || 1;
 
         if (q) {
-            // We use replaceState so we don't accidentally create an infinite loop of back-button clicks
-            loadSearchPage(q, p);
+            // PASS 'false' SO IT DOESN'T PUSH A NEW STATE WHEN GOING BACKWARDS
+            loadSearchPage(q, p, false);
         }
     });
 });
 
 // --- HELPER FUNCTIONS ---
 // --- PAGINATION HELPER FUNCTIONS ---
-async function loadSearchPage(query, pageNumber) {
+async function loadSearchPage(query, pageNumber, updateHistory = true) {
     const grid = document.querySelector('#anime-grid');
     if (!grid) return;
 
+    isViewingSuggestions = false; // Turn the flag OFF the moment a real search happens
     currentQuery = query;
     currentPage = parseInt(pageNumber, 10);
 
-    // --- ADD THESE TWO LINES FOR THE BACK BUTTON ---
-    const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}&page=${pageNumber}`;
-    window.history.pushState({ path: newUrl }, '', newUrl);
+    // Reset the title back to normal just in case it was stuck on "Your Recommendations"
+    const titleSpan = document.getElementById('search-query');
+    if (titleSpan) titleSpan.textContent = `"${query}"`;
+
+    // Only update history if we aren't using the browser's Back button
+    if (updateHistory) {
+        const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}&page=${currentPage}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+    }
 
     toggleLoading(true);
 
-    // Fetch using your teammate's bulletproof function + dynamic Safe Search
-
     let results = await fetchFromJikan(
-    `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}&order_by=members&sort=desc${getSfwString()}`
-);
-
-results = filterExplicitContent(results);
-
-results.sort((a, b) => (b.members || 0) - (a.members || 0));
-    console.log(results);
-
+        `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}${getSfwString()}`
+    );
+    
+    results = filterExplicitContent(results);
+    results.sort((a, b) => (b.Members || 0) - (a.Members || 0));
     if (results.length === 0) {
         grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
-        updatePaginationButtons(0); // This forces the Next button to hide!
+        updatePaginationButtons(0); 
         toggleLoading(false);
-        return; // Stop running the rest of the function
+        return; 
     }
 
     renderAnimeCards(results);

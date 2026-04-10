@@ -12,6 +12,18 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
     const resultsContainer = document.querySelector(containerSelector);
     if (!resultsContainer) return;
 
+    // --- THE SLEDGEHAMMER FIX FOR BUG #4 ---
+    // If we are in list view, brutally hide the suggest and pagination buttons
+    const suggestBtn = document.getElementById('btn-suggest');
+    const paginationControls = document.getElementById('pagination-controls');
+    
+    if (isListView) {
+        if (suggestBtn) suggestBtn.style.display = 'none';
+        if (paginationControls) paginationControls.style.display = 'none';
+    } else {
+        if (suggestBtn) suggestBtn.style.display = 'inline-block';
+    }
+
     // Clear the grid before adding new ones
     resultsContainer.innerHTML = '';
 
@@ -119,3 +131,47 @@ export function toggleLoading(isShowing) {
         overlay.style.display = isShowing ? 'flex' : 'none';
     }
 }
+
+// --- THE 'X' BUTTON LOCAL STORAGE FIX FOR BUG #3 ---
+// We attach this to the document so it always works, even on newly created cards
+document.addEventListener('click', (event) => {
+    // Check if the thing we clicked was our remove button
+    if (event.target.classList.contains('remove-btn')) {
+        event.preventDefault();
+        event.stopPropagation(); // Stops the click from triggering the anime link
+
+        const btn = event.target;
+        const animeId = parseInt(btn.dataset.id, 10);
+
+        if (!animeId) return;
+
+        // 1. OPEN BOTH LISTS FROM THE DATABASE
+        let watchedList = JSON.parse(localStorage.getItem('watchedList')) || [];
+        let wantList = JSON.parse(localStorage.getItem('wantList')) || [];
+
+        // 2. FILTER OUT THE ANIME ID FROM BOTH LISTS
+        // (This is foolproof—if it's not in the list, it just ignores it)
+        watchedList = watchedList.filter(anime => parseInt(anime.mal_id || anime.malId, 10) !== animeId);
+        wantList = wantList.filter(anime => parseInt(anime.mal_id || anime.malId, 10) !== animeId);
+
+        // 3. SAVE THE CLEANED ARRAYS BACK TO THE DATABASE
+        localStorage.setItem('watchedList', JSON.stringify(watchedList));
+        localStorage.setItem('wantList', JSON.stringify(wantList));
+
+        // 4. VISUALLY REMOVE THE CARD FROM THE SCREEN
+        const card = btn.closest('.anime-card');
+        if (card) {
+            card.remove();
+        }
+
+        // 5. CHECK FOR EMPTY STATE
+        // If they just deleted the last card, show the empty message
+        const grid = btn.closest('#anime-grid') || btn.closest('.list-container'); 
+        if (grid && grid.querySelectorAll('.anime-card').length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <p>This list is empty!</p>
+                </div>`;
+        }
+    }
+});
