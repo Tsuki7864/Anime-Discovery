@@ -1,7 +1,7 @@
 // If an anime has no poster, this image is used. You could replace this URL 
 // with a custom branded logo for "Anime Discovery".
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/225x318?text=No+Image';
-
+import { toggleSave } from './profileManager.js';
 /**
  * Renders anime cards to a specific container on the screen.
  * @param {Array} animeList - The array of anime objects to draw.
@@ -16,7 +16,7 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
     // If we are in list view, brutally hide the suggest and pagination buttons
     const suggestBtn = document.getElementById('btn-suggest');
     const paginationControls = document.getElementById('pagination-controls');
-    
+
     if (isListView) {
         if (suggestBtn) suggestBtn.style.display = 'none';
         if (paginationControls) paginationControls.style.display = 'none';
@@ -145,18 +145,25 @@ document.addEventListener('click', (event) => {
 
         if (!animeId) return;
 
-        // 1. OPEN BOTH LISTS FROM THE DATABASE
+        // 1. OPEN BOTH LISTS TO FIND THE FULL ANIME DATA
         let watchedList = JSON.parse(localStorage.getItem('watchedList')) || [];
         let wantList = JSON.parse(localStorage.getItem('wantList')) || [];
 
-        // 2. FILTER OUT THE ANIME ID FROM BOTH LISTS
-        // (This is foolproof—if it's not in the list, it just ignores it)
-        watchedList = watchedList.filter(anime => parseInt(anime.mal_id || anime.malId, 10) !== animeId);
-        wantList = wantList.filter(anime => parseInt(anime.mal_id || anime.malId, 10) !== animeId);
+        // 2. FIND THE ANIME AND DETERMINE WHICH LIST IT WAS IN
+        let animeToDelete = watchedList.find(a => parseInt(a.mal_id || a.malId, 10) === animeId);
+        let listName = 'watchedList';
 
-        // 3. SAVE THE CLEANED ARRAYS BACK TO THE DATABASE
-        localStorage.setItem('watchedList', JSON.stringify(watchedList));
-        localStorage.setItem('wantList', JSON.stringify(wantList));
+        if (!animeToDelete) {
+            animeToDelete = wantList.find(a => parseInt(a.mal_id || a.malId, 10) === animeId);
+            listName = 'wantList';
+        }
+
+        // 3. TRIGGER TOGGLESAVE! 
+        // This acts as an "unsave". It will deduct the profile points, 
+        // remove the ID from the profile exclusions, and safely remove it from the database.
+        if (animeToDelete) {
+            toggleSave(animeToDelete, listName);
+        }
 
         // 4. VISUALLY REMOVE THE CARD FROM THE SCREEN
         const card = btn.closest('.anime-card');
@@ -166,7 +173,7 @@ document.addEventListener('click', (event) => {
 
         // 5. CHECK FOR EMPTY STATE
         // If they just deleted the last card, show the empty message
-        const grid = btn.closest('#anime-grid') || btn.closest('.list-container'); 
+        const grid = btn.closest('#anime-grid') || btn.closest('.list-container');
         if (grid && grid.querySelectorAll('.anime-card').length === 0) {
             grid.innerHTML = `
                 <div class="empty-state">

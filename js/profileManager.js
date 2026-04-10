@@ -12,7 +12,7 @@ export function loadUserProfile() {
     if (saved) { // If we found the notebook...
         try {
             userProfile = JSON.parse(saved); // Open it up and read it
-            
+
             // Just in case it's an old notebook missing the length section, add it!
             if (!userProfile.lengthPreferences) {
                 userProfile.lengthPreferences = { "short": 0, "medium": 0, "long": 0 };
@@ -42,26 +42,33 @@ export function toggleSave(anime, listName) {
         ...(anime.demographics || [])
     ];
 
-    const isAlreadySaved = userProfile[profileKey].includes(anime.mal_id);
+    // 1. FORCE THE ID TO BE A STRICT NUMBER FOR BULLETPROOF MATH
+    const safeAnimeId = Number(anime.mal_id || anime.malId);
+
+    // 2. CHECK USING NUMBERS (Ignores String vs Number differences)
+    const isAlreadySaved = userProfile[profileKey].some(id => Number(id) === safeAnimeId);
 
     if (isAlreadySaved) {
-        // --- REMOVE ---
-        // 1. Remove ID from profile
-        userProfile[profileKey] = userProfile[profileKey].filter(id => id !== anime.mal_id);
+        // 1. Remove ID from profile safely
+        userProfile[profileKey] = userProfile[profileKey].filter(id => Number(id) !== safeAnimeId);
+
         // 2. Deduct the genre and length points
         removeGenreStats(allTags, weight);
-        removeLengthStats(anime.episodes, weight);
-        // 3. Remove full object from the list in localStorage
+        removeLengthStats(anime.episodes || 0, weight);
+
+        // 3. Remove full object from the list in localStorage safely
         let list = JSON.parse(localStorage.getItem(listName)) || [];
-        list = list.filter(a => a.mal_id !== anime.mal_id);
+        list = list.filter(a => Number(a.mal_id || a.malId) !== safeAnimeId);
         localStorage.setItem(listName, JSON.stringify(list));
     } else {
         // --- ADD ---
-        // 1. Add ID to profile
-        userProfile[profileKey].push(anime.mal_id);
+        // 1. Add ID to profile as a clean Number
+        userProfile[profileKey].push(safeAnimeId);
+
         // 2. Add genre and length points
         updateGenreStats(allTags, weight);
-        updateLengthStats(anime.episodes, weight);
+        updateLengthStats(anime.episodes || 0, weight);
+
         // 3. Save full object to the list in localStorage
         let list = JSON.parse(localStorage.getItem(listName)) || [];
         list.push(anime);
@@ -91,12 +98,12 @@ function removeLengthStats(episodes, weight) {
 // 4. Update Helpers
 function updateGenreStats(genres, weight) {
     if (!genres || !Array.isArray(genres)) return; // If there are no genres, stop.
-    
+
     genres.forEach(g => { // Look at every genre the show has
         if (g && g.name) {
             // If we haven't seen this genre before, start it at 0
             if (!userProfile.genrePreferences[g.name]) userProfile.genrePreferences[g.name] = 0;
-            
+
             // Add the points (the "weight")
             userProfile.genrePreferences[g.name] += weight;
         }
