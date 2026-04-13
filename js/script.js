@@ -355,12 +355,12 @@ async function loadSearchPage(query, pageNumber, updateHistory = true) {
 
     toggleLoading(true);
 
-    let results = await fetchFromJikan(
-        `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}${getSfwString()}`
-    );
-    
+   let results = await fetchFromJikan(
+    `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}&order_by=members&sort=desc${getSfwString()}`);
+
     results = filterExplicitContent(results);
-    results.sort((a, b) => (b.Members || 0) - (a.Members || 0));
+
+    results.sort((a, b) => (b.members || 0) - (a.members || 0));
     if (results.length === 0) {
         grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
         updatePaginationButtons(0); 
