@@ -1,7 +1,8 @@
+// ui.js
 // If an anime has no poster, this image is used. You could replace this URL 
 // with a custom branded logo for "Anime Discovery".
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/225x318?text=No+Image';
-
+import { toggleSave } from './profileManager.js';
 /**
  * Renders anime cards to a specific container on the screen.
  * @param {Array} animeList - The array of anime objects to draw.
@@ -16,7 +17,7 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
     // If we are in list view, brutally hide the suggest and pagination buttons
     const suggestBtn = document.getElementById('btn-suggest');
     const paginationControls = document.getElementById('pagination-controls');
-    
+
     if (isListView) {
         if (suggestBtn) suggestBtn.style.display = 'none';
         if (paginationControls) paginationControls.style.display = 'none';
@@ -135,43 +136,56 @@ export function toggleLoading(isShowing) {
 // --- THE 'X' BUTTON LOCAL STORAGE FIX FOR BUG #3 ---
 // We attach this to the document so it always works, even on newly created cards
 document.addEventListener('click', (event) => {
-    // Check if the thing we clicked was our remove button
     if (event.target.classList.contains('remove-btn')) {
         event.preventDefault();
-        event.stopPropagation(); // Stops the click from triggering the anime link
+        event.stopPropagation();
 
         const btn = event.target;
         const animeId = parseInt(btn.dataset.id, 10);
-
         if (!animeId) return;
 
-        // 1. OPEN BOTH LISTS FROM THE DATABASE
+        console.log("=======================================");
+        console.log("🗑️ 1. You clicked 'X' on Anime ID:", animeId);
+
+        // 1. OPEN BOTH LISTS
         let watchedList = JSON.parse(localStorage.getItem('watchedList')) || [];
         let wantList = JSON.parse(localStorage.getItem('wantList')) || [];
 
-        // 2. FILTER OUT THE ANIME ID FROM BOTH LISTS
-        // (This is foolproof—if it's not in the list, it just ignores it)
-        watchedList = watchedList.filter(anime => parseInt(anime.mal_id || anime.malId, 10) !== animeId);
-        wantList = wantList.filter(anime => parseInt(anime.mal_id || anime.malId, 10) !== animeId);
+        console.log(`📦 2. DB Check -> Watched: ${watchedList.length} items | Want: ${wantList.length} items`);
 
-        // 3. SAVE THE CLEANED ARRAYS BACK TO THE DATABASE
-        localStorage.setItem('watchedList', JSON.stringify(watchedList));
-        localStorage.setItem('wantList', JSON.stringify(wantList));
-
-        // 4. VISUALLY REMOVE THE CARD FROM THE SCREEN
-        const card = btn.closest('.anime-card');
-        if (card) {
-            card.remove();
+        // 👉 THE DIAGNOSTIC CHECK
+        if (watchedList.length > 0) {
+            console.log("🔍 3. Inspecting the first item in Watched List:");
+            console.log(watchedList[0]);
+            console.log("🔍 4. What is its ID? -> mal_id:", watchedList[0].mal_id, "| id:", watchedList[0].id);
         }
 
-        // 5. CHECK FOR EMPTY STATE
-        // If they just deleted the last card, show the empty message
-        const grid = btn.closest('#anime-grid') || btn.closest('.list-container'); 
+        // 2. SEARCH WATCHED LIST
+        let animeToDelete = watchedList.find(a => parseInt(a.mal_id || a.malId || a.id, 10) === animeId);
+        let listName = 'watchedList';
+
+        // 3. IF NOT IN WATCHED, SEARCH WANT LIST
+        if (!animeToDelete) {
+            animeToDelete = wantList.find(a => parseInt(a.mal_id || a.malId || a.id, 10) === animeId);
+            listName = 'wantList';
+        }
+
+        // 4. TRIGGER TOGGLESAVE
+        if (animeToDelete) {
+            console.log(`✅ 5. MATCH FOUND in ${listName}! Sending to toggleSave...`);
+            toggleSave(animeToDelete, listName);
+        } else {
+            console.log("❌ 5. MATCH FAILED! The ID you clicked does not match the IDs in the database.");
+        }
+
+        // 5. REMOVE CARD VISUALLY
+        const card = btn.closest('.anime-card');
+        if (card) card.remove();
+
+        // 6. EMPTY STATE CHECK
+        const grid = btn.closest('#anime-grid') || btn.closest('.list-container');
         if (grid && grid.querySelectorAll('.anime-card').length === 0) {
-            grid.innerHTML = `
-                <div class="empty-state">
-                    <p>This list is empty!</p>
-                </div>`;
+            grid.innerHTML = `<div class="empty-state"><p>This list is empty!</p></div>`;
         }
     }
 });

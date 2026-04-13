@@ -1,3 +1,4 @@
+// algorithm.js
 export function calculateRecommendations(candidates, userProfile) {
     const genrePrefs = userProfile.genrePreferences || {};
     const lengthPrefs = userProfile.lengthPreferences || {};
