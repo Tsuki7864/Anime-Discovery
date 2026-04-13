@@ -1,3 +1,4 @@
+<!-- want.html-->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,8 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Want to Watch</title>
   <link rel="stylesheet" href="../css/base.css" />
-<link rel="stylesheet" href="../css/results.css" />
-<link rel="stylesheet" href="../css/cards.css" />
+  <link rel="stylesheet" href="../css/results.css" />
+  <link rel="stylesheet" href="../css/cards.css" />
 </head>
 
 <body class="results-body">
@@ -59,34 +60,13 @@
     function getFormattedList() {
       return wantList.map(anime => ({
         ...anime,
-        images: { jpg: { image_url: anime.image } } // Re-creates the API structure
+        images: { jpg: { image_url: anime.image } }
       }));
     }
 
-    // 3. Draw the cards using ui.js! (The 'true' tells it to use List Mode)
+    // 3. Draw the cards using ui.js! 
     renderAnimeCards(getFormattedList(), '#anime-grid', true);
-
-    // 4. Handle the Remove Button clicks
-    document.querySelector('#anime-grid').addEventListener('click', (event) => {
-      const removeBtn = event.target.closest('.remove-btn');
-      if (!removeBtn) return;
-
-      const rawId = removeBtn.dataset.id;
-      const title = removeBtn.dataset.title;
-
-      wantList = wantList.filter(anime => {
-        const animeId = anime.mal_id ?? anime.malId ?? "";
-        if (rawId && animeId !== "") {
-          return String(animeId) !== String(rawId);
-        }
-        return anime.title !== title;
-      });
-
-      localStorage.setItem("wantList", JSON.stringify(wantList));
-      renderAnimeCards(getFormattedList(), '#anime-grid', true);
-    });
   </script>
-
 </body>
 
 </html>

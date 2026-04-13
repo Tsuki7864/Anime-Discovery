@@ -1,3 +1,4 @@
+// profileManager.js
 const STORAGE_KEY = 'anime_discovery_profile';
 
 let userProfile = {
@@ -32,6 +33,9 @@ function saveProfile() {
 
 
 export function toggleSave(anime, listName) {
+    console.log("🟢 [toggleSave] STARTED for:", anime.title || anime.mal_id);
+    console.log("🟢 [toggleSave] Target List:", listName);
+
     const isWatched = listName === 'watchedList';
     const weight = isWatched ? 2 : 5;
     const profileKey = isWatched ? 'watched' : 'wantToWatch';
@@ -42,41 +46,56 @@ export function toggleSave(anime, listName) {
         ...(anime.demographics || [])
     ];
 
-    // 1. FORCE THE ID TO BE A STRICT NUMBER FOR BULLETPROOF MATH
     const safeAnimeId = Number(anime.mal_id || anime.malId);
+    console.log("🟢 [toggleSave] ID being checked:", safeAnimeId);
 
-    // 2. CHECK USING NUMBERS (Ignores String vs Number differences)
     const isAlreadySaved = userProfile[profileKey].some(id => Number(id) === safeAnimeId);
+    console.log("🟢 [toggleSave] Is it already in profile?", isAlreadySaved);
 
     if (isAlreadySaved) {
-        // 1. Remove ID from profile safely
+        // --- REMOVE ---
+        console.log("🔴 [toggleSave] Removing from profile...");
         userProfile[profileKey] = userProfile[profileKey].filter(id => Number(id) !== safeAnimeId);
-
-        // 2. Deduct the genre and length points
-        removeGenreStats(allTags, weight);
-        removeLengthStats(anime.episodes || 0, weight);
-
-        // 3. Remove full object from the list in localStorage safely
+        
+        try {
+            removeGenreStats(allTags, weight);
+            removeLengthStats(anime.episodes || 0, weight);
+            console.log("🔴 [toggleSave] Math deducted successfully.");
+        } catch (error) {
+            console.error("❌ ERROR inside remove stats functions:", error);
+        }
+        
         let list = JSON.parse(localStorage.getItem(listName)) || [];
         list = list.filter(a => Number(a.mal_id || a.malId) !== safeAnimeId);
         localStorage.setItem(listName, JSON.stringify(list));
+        console.log("🔴 [toggleSave] Removed from LocalStorage List.");
     } else {
         // --- ADD ---
-        // 1. Add ID to profile as a clean Number
-        userProfile[profileKey].push(safeAnimeId);
-
-        // 2. Add genre and length points
-        updateGenreStats(allTags, weight);
-        updateLengthStats(anime.episodes || 0, weight);
-
-        // 3. Save full object to the list in localStorage
+        console.log("🔵 [toggleSave] Adding to profile...");
+        userProfile[profileKey].push(safeAnimeId); 
+        
+        try {
+            updateGenreStats(allTags, weight);
+            updateLengthStats(anime.episodes || 0, weight);
+            console.log("🔵 [toggleSave] Math added successfully.");
+        } catch (error) {
+            console.error("❌ ERROR inside update stats functions:", error);
+        }
+        
         let list = JSON.parse(localStorage.getItem(listName)) || [];
         list.push(anime);
         localStorage.setItem(listName, JSON.stringify(list));
+        console.log("🔵 [toggleSave] Added to LocalStorage List.");
     }
 
-    saveProfile();
-    return !isAlreadySaved; // true = was added, false = was removed
+    try {
+        saveProfile();
+        console.log("🟢 [toggleSave] Profile saved successfully! Current Profile:", userProfile);
+    } catch (error) {
+        console.error("❌ ERROR inside saveProfile function:", error);
+    }
+    
+    return !isAlreadySaved; 
 }
 
 // Mirror functions of updateGenreStats and updateLengthStats
