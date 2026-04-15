@@ -77,6 +77,36 @@ function safeParseDataset(value) {
     }
 }
 
+// Cache to avoid hitting Jikan too much for static data
+let jikanTagCache = [];
+
+async function getJikanIdsForTags(tagNames) {
+    if (tagNames.length === 0) return [];
+
+    // 1. Fetch the master list of all genres and themes from Jikan if we don't have it yet
+    if (jikanTagCache.length === 0) {
+       try {
+           const genresRes = await fetch('https://api.jikan.moe/v4/genres/anime');
+           const genresData = await genresRes.json();
+           const themesRes = await fetch('https://api.jikan.moe/v4/themes/anime'); // Themes are technically a separate endpoint here!
+           const themesData = await themesRes.json();
+           
+           jikanTagCache = [...(genresData.data || []), ...(themesData.data || [])];
+       } catch (err) {
+           console.error("Failed to fetch master tag list:", err);
+           return [];
+       }
+    }
+
+    // 2. Find the IDs that match the names we gave it
+    const ids = [];
+    tagNames.forEach(name => {
+        const foundTag = jikanTagCache.find(t => t.name === name);
+        if (foundTag) ids.push(foundTag.mal_id);
+    });
+
+    return ids;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Grab all our elements
@@ -181,7 +211,7 @@ if (safeSearchBtn) {
 
             toggleLoading(true);
             try {
-                isViewingSuggestions = true; // Tell the app we are looking at suggestions
+                isViewingSuggestions = true;
                 
                 const sfwParam = getSfwString();
                 const userProfile = {
@@ -190,25 +220,43 @@ if (safeSearchBtn) {
                 };
                 const exclusions = new Set(getExcludedIds());
 
+                // --- 1. Find Top Tags for the API Call ---
+                const genreArray = Object.entries(userProfile.genrePreferences);
+                genreArray.sort((a, b) => b[1] - a[1]);
+                
+                // Get the NAMES of the top 3 tags (e.g., ["Action", "Isekai", "Mecha"])
+                const topTagNames = genreArray.slice(0, 3).map(g => g[0]);
+
+                // We need to map these names back to their Jikan mal_ids. 
+                // We'll create a helper function for this (see below)
+                const topTagIds = await getJikanIdsForTags(topTagNames);
+                
+                // Build the query string for Jikan
+                let genreQuery = "";
+                if (topTagIds.length > 0) {
+                     genreQuery = `&genres=${topTagIds.join(',')}`;
+                }
+
                 let finalPicks = [];
                 let fetchAttempts = 0;
 
-                // Keep fetching until we have at least 12 fresh anime, OR we've tried 4 times
                 while (finalPicks.length < 12 && fetchAttempts < 4) {
-                    const randomPage = Math.floor(Math.random() * 10) + 1; 
+                    const randomPage = Math.floor(Math.random() * 5) + 1; // Limit pages to 1-5 for better matches
                     
-                    let batch = await fetchFromJikan(`/top/anime?filter=bypopularity&page=${randomPage}&limit=25${sfwParam}`);
+                    // --- 2. The NEW Targeted API Fetch ---
+                    // Notice we replaced the /top endpoint with the /anime search endpoint!
+                    let batch = await fetchFromJikan(`/anime?order_by=score&sort=desc&page=${randomPage}&limit=25${sfwParam}${genreQuery}`);
                     batch = filterExplicitContent(batch);
                     
                     let scoredBatch = calculateRecommendations(batch, userProfile);
-                    
-                    // Filter out ones we already saved
                     let validPicks = scoredBatch.filter(anime => !exclusions.has(anime.mal_id));
                     
                     finalPicks = [...finalPicks, ...validPicks];
                     fetchAttempts++;
                 }
 
+                // ... (Keep the rest of your original try block here - sorting, UI updates, etc.) ...
+                
                 // Remove any duplicates just in case the random pages overlapped
                 finalPicks = [...new Map(finalPicks.map(anime => [anime.mal_id, anime])).values()];
 
@@ -235,7 +283,8 @@ if (safeSearchBtn) {
                     suggestBtn.style.cursor = "pointer";
                 }, 3000);
 
-            } catch (err) {
+            }
+            catch (err) {
                 console.error(err);
                 alert("Error generating suggestions.");
                 suggestBtn.disabled = false;
