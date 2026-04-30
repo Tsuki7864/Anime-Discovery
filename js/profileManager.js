@@ -56,7 +56,7 @@ export function toggleSave(anime, listName) {
         // --- REMOVE ---
         console.log("🔴 [toggleSave] Removing from profile...");
         userProfile[profileKey] = userProfile[profileKey].filter(id => Number(id) !== safeAnimeId);
-        
+
         try {
             removeGenreStats(allTags, weight);
             removeLengthStats(anime.episodes || 0, weight);
@@ -64,7 +64,7 @@ export function toggleSave(anime, listName) {
         } catch (error) {
             console.error("❌ ERROR inside remove stats functions:", error);
         }
-        
+
         let list = JSON.parse(localStorage.getItem(listName)) || [];
         list = list.filter(a => Number(a.mal_id || a.malId) !== safeAnimeId);
         localStorage.setItem(listName, JSON.stringify(list));
@@ -72,8 +72,8 @@ export function toggleSave(anime, listName) {
     } else {
         // --- ADD ---
         console.log("🔵 [toggleSave] Adding to profile...");
-        userProfile[profileKey].push(safeAnimeId); 
-        
+        userProfile[profileKey].push(safeAnimeId);
+
         try {
             updateGenreStats(allTags, weight);
             updateLengthStats(anime.episodes || 0, weight);
@@ -81,7 +81,7 @@ export function toggleSave(anime, listName) {
         } catch (error) {
             console.error("❌ ERROR inside update stats functions:", error);
         }
-        
+
         let list = JSON.parse(localStorage.getItem(listName)) || [];
         list.push(anime);
         localStorage.setItem(listName, JSON.stringify(list));
@@ -94,8 +94,8 @@ export function toggleSave(anime, listName) {
     } catch (error) {
         console.error("❌ ERROR inside saveProfile function:", error);
     }
-    
-    return !isAlreadySaved; 
+
+    return !isAlreadySaved;
 }
 
 // Mirror functions of updateGenreStats and updateLengthStats

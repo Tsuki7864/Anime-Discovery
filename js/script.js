@@ -85,17 +85,17 @@ async function getJikanIdsForTags(tagNames) {
 
     // 1. Fetch the master list of all genres and themes from Jikan if we don't have it yet
     if (jikanTagCache.length === 0) {
-       try {
-           const genresRes = await fetch('https://api.jikan.moe/v4/genres/anime');
-           const genresData = await genresRes.json();
-           const themesRes = await fetch('https://api.jikan.moe/v4/themes/anime'); // Themes are technically a separate endpoint here!
-           const themesData = await themesRes.json();
-           
-           jikanTagCache = [...(genresData.data || []), ...(themesData.data || [])];
-       } catch (err) {
-           console.error("Failed to fetch master tag list:", err);
-           return [];
-       }
+        try {
+            const genresRes = await fetch('https://api.jikan.moe/v4/genres/anime');
+            const genresData = await genresRes.json();
+            const themesRes = await fetch('https://api.jikan.moe/v4/themes/anime'); // Themes are technically a separate endpoint here!
+            const themesData = await themesRes.json();
+
+            jikanTagCache = [...(genresData.data || []), ...(themesData.data || [])];
+        } catch (err) {
+            console.error("Failed to fetch master tag list:", err);
+            return [];
+        }
     }
 
     // 2. Find the IDs that match the names we gave it
@@ -124,37 +124,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchQuery = urlParams.get('q');
 
     // --- SAFE SEARCH TOGGLE LOGIC ---
-const safeSearchBtn = document.getElementById('safe-search-btn');
+    const safeSearchBtn = document.getElementById('safe-search-btn');
 
-if (safeSearchBtn) {
-    function updateSafeSearchButton() {
-        if (isSfwActive) {
-            safeSearchBtn.classList.add('active');
-            safeSearchBtn.textContent = 'SAFE SEARCH: ON';
-        } else {
-            safeSearchBtn.classList.remove('active');
-            safeSearchBtn.textContent = 'SAFE SEARCH: OFF';
+    if (safeSearchBtn) {
+        function updateSafeSearchButton() {
+            if (isSfwActive) {
+                safeSearchBtn.classList.add('active');
+                safeSearchBtn.textContent = 'SAFE SEARCH: ON';
+            } else {
+                safeSearchBtn.classList.remove('active');
+                safeSearchBtn.textContent = 'SAFE SEARCH: OFF';
+            }
         }
-    }
 
-    updateSafeSearchButton();
-
-    safeSearchBtn.addEventListener('click', async () => {
-        isSfwActive = !isSfwActive;
-        localStorage.setItem('safeSearch', String(isSfwActive));
         updateSafeSearchButton();
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentSearch = urlParams.get('q');
+        safeSearchBtn.addEventListener('click', async () => {
+            isSfwActive = !isSfwActive;
+            localStorage.setItem('safeSearch', String(isSfwActive));
+            updateSafeSearchButton();
 
-        if (!isViewingSuggestions && currentSearch && resultsContainer) {
-            await loadSearchPage(currentSearch, currentPage || 1);
-        } else if (isViewingSuggestions) {
-            // Re-trigger the suggest button so it generates new SFW suggestions!
-            suggestBtn.click();
-        }
-    });
-}
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSearch = urlParams.get('q');
+
+            if (!isViewingSuggestions && currentSearch && resultsContainer) {
+                await loadSearchPage(currentSearch, currentPage || 1);
+            } else if (isViewingSuggestions) {
+                // Re-trigger the suggest button so it generates new SFW suggestions!
+                suggestBtn.click();
+            }
+        });
+    }
 
 
     if (searchQuery && resultsContainer) {
@@ -212,7 +212,7 @@ if (safeSearchBtn) {
             toggleLoading(true);
             try {
                 isViewingSuggestions = true;
-                
+
                 const sfwParam = getSfwString();
                 const userProfile = {
                     genrePreferences: getGenrePreferences(),
@@ -223,18 +223,18 @@ if (safeSearchBtn) {
                 // --- 1. Find Top Tags for the API Call ---
                 const genreArray = Object.entries(userProfile.genrePreferences);
                 genreArray.sort((a, b) => b[1] - a[1]);
-                
+
                 // Get the NAMES of the top 3 tags (e.g., ["Action", "Isekai", "Mecha"])
                 const topTagNames = genreArray.slice(0, 3).map(g => g[0]);
 
                 // We need to map these names back to their Jikan mal_ids. 
                 // We'll create a helper function for this (see below)
                 const topTagIds = await getJikanIdsForTags(topTagNames);
-                
+
                 // Build the query string for Jikan
                 let genreQuery = "";
                 if (topTagIds.length > 0) {
-                     genreQuery = `&genres=${topTagIds.join(',')}`;
+                    genreQuery = `&genres=${topTagIds.join(',')}`;
                 }
 
                 let finalPicks = [];
@@ -242,21 +242,21 @@ if (safeSearchBtn) {
 
                 while (finalPicks.length < 12 && fetchAttempts < 4) {
                     const randomPage = Math.floor(Math.random() * 5) + 1; // Limit pages to 1-5 for better matches
-                    
+
                     // --- 2. The NEW Targeted API Fetch ---
                     // Notice we replaced the /top endpoint with the /anime search endpoint!
                     let batch = await fetchFromJikan(`/anime?order_by=score&sort=desc&page=${randomPage}&limit=25${sfwParam}${genreQuery}`);
                     batch = filterExplicitContent(batch);
-                    
+
                     let scoredBatch = calculateRecommendations(batch, userProfile);
                     let validPicks = scoredBatch.filter(anime => !exclusions.has(anime.mal_id));
-                    
+
                     finalPicks = [...finalPicks, ...validPicks];
                     fetchAttempts++;
                 }
 
                 // ... (Keep the rest of your original try block here - sorting, UI updates, etc.) ...
-                
+
                 // Remove any duplicates just in case the random pages overlapped
                 finalPicks = [...new Map(finalPicks.map(anime => [anime.mal_id, anime])).values()];
 
@@ -405,17 +405,17 @@ async function loadSearchPage(query, pageNumber, updateHistory = true) {
 
     toggleLoading(true);
 
-   let results = await fetchFromJikan(
-    `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}&order_by=members&sort=desc${getSfwString()}`);
+    let results = await fetchFromJikan(
+        `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}&order_by=members&sort=desc${getSfwString()}`);
 
     results = filterExplicitContent(results);
 
     results.sort((a, b) => (b.members || 0) - (a.members || 0));
     if (results.length === 0) {
         grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
-        updatePaginationButtons(0); 
+        updatePaginationButtons(0);
         toggleLoading(false);
-        return; 
+        return;
     }
 
     renderAnimeCards(results);
