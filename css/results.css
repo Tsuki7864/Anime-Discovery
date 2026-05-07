@@ -6,25 +6,59 @@
         radial-gradient(circle at 50% 50%, rgba(180, 0, 255, 0.15), transparent 60%),
         linear-gradient(135deg, #050510, #000000 60%, #0a0030);
     color: white;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 40px 0;
+    /* We removed flexbox here and added padding so the navbar doesn't overlap content */
+    display: block;
+    padding-top: 100px;
 }
 
+/* NEW SPLIT LAYOUT SKELETON */
 .layout-container {
     width: 95%;
     max-width: 1500px;
     margin: 0 auto 40px auto;
     display: flex;
     gap: 25px;
-    align-items: flex-start;
+    align-items: flex-center;
 }
 
-.results-wrapper {
-    width: 100%;
-    display: flex;
-    justify-content: center;
+/* Shrunk the blackbox from 75% to adapt to the new flex grid */
+.results-panel {
+    background: rgba(0, 0, 0, 0.85);
+    flex: 1;
+    /* Takes up all remaining space to the left */
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* The new sidebar for Phase 2 */
+.sidebar-panel {
+    width: 320px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: sticky;
+    top: 100px;
+    /* Sticks to the screen when scrolling! */
+}
+
+/* Hide the old list buttons since they are in the navbar now */
+.results-actions a.top-link-btn {
+    display: none;
+}
+
+/* Responsive fix for phones */
+@media (max-width: 1024px) {
+    .layout-container {
+        flex-direction: column;
+    }
+
+    .sidebar-panel {
+        width: 100%;
+        position: relative;
+        top: 0;
+    }
 }
 
 .results-panel {

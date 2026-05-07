@@ -14,7 +14,7 @@
 
 <body class="results-body">
 
-  <div class="results-wrapper">
+  <div class="layout-container">
     <div class="results-panel">
       <div class="results-top-row">
         <h2 class="results-title">Watched</h2>
@@ -36,6 +36,15 @@
 
       <div id="anime-grid"></div>
     </div>
+  </div>
+  <aside class="sidebar-panel">
+    <h3 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; color: white;">
+      🔥 Trending Now
+    </h3>
+    <div id="trending-container">
+      <p style="color: #666; font-size: 0.9rem; font-style: italic;">Fetching API data...</p>
+    </div>
+  </aside>
   </div>
   <script>
     function miniSearch() {
@@ -69,5 +78,13 @@
     renderAnimeCards(getFormattedList(), '#anime-grid', true);
   </script>
 </body>
+<nav class="global-nav">
+  <a href="../index.html" class="nav-brand">Anime Discovery</a>
+  <div class="nav-links">
+    <a href="want.html" class="nav-link">Want to Watch</a>
+    <a href="watched.html" class="nav-link">Watched</a>
+    <a href="guide.html" class="nav-link">Guide</a>
+  </div>
+</nav>
 
 </html>
