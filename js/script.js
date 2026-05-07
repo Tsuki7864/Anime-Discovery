@@ -7,8 +7,7 @@ import {
 } from './profileManager.js';
 
 import { calculateRecommendations } from './algorithm.js';
-import { renderAnimeCards, toggleLoading } from './ui.js';
-
+import { renderAnimeCards, toggleLoading, renderTrendingAnime } from './ui.js';
 let currentPage = 1;
 let currentQuery = "";
 let isViewingSuggestions = false; // <-- ADD THIS
@@ -122,7 +121,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- 1. AUTOMATIC SEARCH ON PAGE LOAD ---
     const urlParams = new URLSearchParams(window.location.search);
     const searchQuery = urlParams.get('q');
+    const genreQuery = urlParams.get('genre'); // NEW: Catch genre clicks
 
+    loadTrendingSidebar();
+
+    if (searchQuery && resultsContainer) {
+        loadSearchPage(searchQuery, 1, 'search', true);
+    } else if (genreQuery && resultsContainer) {
+        loadSearchPage(genreQuery, 1, 'genre', true);
+    }
     // --- SAFE SEARCH TOGGLE LOGIC ---
     const safeSearchBtn = document.getElementById('safe-search-btn');
 
@@ -164,17 +171,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- 2. PAGINATION BUTTONS ---
     if (prevBtn) {
         prevBtn.addEventListener('click', (event) => {
-            event.preventDefault(); // Stops the button from accidentally refreshing the page
+            event.preventDefault();
             if (currentPage > 1) {
-                loadSearchPage(currentQuery, currentPage - 1);
+                const searchType = urlParams.get('genre') ? 'genre' : 'search';
+                loadSearchPage(currentQuery, currentPage - 1, searchType, true);
             }
         });
     }
 
     if (nextBtn) {
         nextBtn.addEventListener('click', (event) => {
-            event.preventDefault(); // Stops the button from accidentally refreshing the page
-            loadSearchPage(currentQuery, currentPage + 1);
+            event.preventDefault();
+            const searchType = urlParams.get('genre') ? 'genre' : 'search';
+            loadSearchPage(currentQuery, currentPage + 1, searchType, true);
         });
     }
 
@@ -183,7 +192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         searchBtn.addEventListener('click', () => {
             const query = document.querySelector('#search-input').value.trim();
             if (!query) return;
-            loadSearchPage(query, 1); // Triggers our new, clean function!
+            loadSearchPage(query, 1, 'search', true); // Added 'search' and true
         });
     }
 
@@ -374,43 +383,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.addEventListener('popstate', () => {
         const params = new URLSearchParams(window.location.search);
         const q = params.get('q');
+        const genre = params.get('genre');
         const p = parseInt(params.get('page')) || 1;
 
         if (q) {
-            // PASS 'false' SO IT DOESN'T PUSH A NEW STATE WHEN GOING BACKWARDS
-            loadSearchPage(q, p, false);
+            loadSearchPage(q, p, 'search', false);
+        } else if (genre) {
+            loadSearchPage(genre, p, 'genre', false);
         }
     });
 });
 
 // --- HELPER FUNCTIONS ---
 // --- PAGINATION HELPER FUNCTIONS ---
-async function loadSearchPage(query, pageNumber, updateHistory = true) {
+async function loadSearchPage(query, pageNumber, searchType = 'search', updateHistory = true) {
     const grid = document.querySelector('#anime-grid');
     if (!grid) return;
 
-    isViewingSuggestions = false; // Turn the flag OFF the moment a real search happens
+    isViewingSuggestions = false;
     currentQuery = query;
     currentPage = parseInt(pageNumber, 10);
 
-    // Reset the title back to normal just in case it was stuck on "Your Recommendations"
+    // Set the title properly
     const titleSpan = document.getElementById('search-query');
-    if (titleSpan) titleSpan.textContent = `"${query}"`;
+    if (titleSpan) {
+        titleSpan.textContent = searchType === 'genre' ? `${query} Anime` : `"${query}"`;
+    }
 
-    // Only update history if we aren't using the browser's Back button
+    // Update URL history
     if (updateHistory) {
-        const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}&page=${currentPage}`;
+        const paramKey = searchType === 'genre' ? 'genre' : 'q';
+        const newUrl = `${window.location.pathname}?${paramKey}=${encodeURIComponent(query)}&page=${currentPage}`;
         window.history.pushState({ path: newUrl }, '', newUrl);
     }
 
     toggleLoading(true);
 
-    let results = await fetchFromJikan(
-        `/anime?q=${encodeURIComponent(currentQuery)}&limit=18&page=${currentPage}&order_by=members&sort=desc${getSfwString()}`);
+    let apiUrl = '';
 
+    // Check if we are doing a text search or a genre click
+    if (searchType === 'genre') {
+        const genreIds = await getJikanIdsForTags([query]);
+        if (genreIds.length > 0) {
+            apiUrl = `/anime?genres=${genreIds[0]}&limit=18&page=${currentPage}&order_by=members&sort=desc${getSfwString()}`;
+        } else {
+            apiUrl = `/anime?q=${encodeURIComponent(query)}&limit=18&page=${currentPage}&order_by=members&sort=desc${getSfwString()}`;
+        }
+    } else {
+        apiUrl = `/anime?q=${encodeURIComponent(query)}&limit=18&page=${currentPage}&order_by=members&sort=desc${getSfwString()}`;
+    }
+
+    let results = await fetchFromJikan(apiUrl);
     results = filterExplicitContent(results);
-
     results.sort((a, b) => (b.members || 0) - (a.members || 0));
+
     if (results.length === 0) {
         grid.innerHTML = '<p style="text-align:center; width:100%; font-size: 1.2rem; margin-top: 50px;">No anime found.</p>';
         updatePaginationButtons(0);
@@ -420,7 +446,6 @@ async function loadSearchPage(query, pageNumber, updateHistory = true) {
 
     renderAnimeCards(results);
     toggleLoading(false);
-
     updatePaginationButtons(results.length);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -474,4 +499,15 @@ function updateSuggestButtonVisibility() {
     } else {
         suggestBtn.style.display = 'inline-block';
     }
+}
+// --- NEW HELPER: TRENDING FETCH ---
+async function loadTrendingSidebar() {
+    const trendingContainer = document.querySelector('#trending-container');
+    if (!trendingContainer) return; // If there is no sidebar on this page, stop here.
+
+    // Fetch the top 5 currently airing anime
+    const trendingData = await fetchFromJikan(`/top/anime?filter=airing&limit=5${getSfwString()}`);
+
+    // Send it to UI.js to be drawn!
+    renderTrendingAnime(trendingData);
 }

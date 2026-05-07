@@ -189,3 +189,37 @@ document.addEventListener('click', (event) => {
         }
     }
 });
+
+export function renderTrendingAnime(animeList, containerSelector = '#trending-container') {
+    const container = document.querySelector(containerSelector);
+    if (!container) return;
+
+    container.innerHTML = ''; // Clear out the "Fetching API..." text
+
+    if (!animeList || animeList.length === 0) {
+        container.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Failed to load trending anime.</p>';
+        return;
+    }
+
+    animeList.forEach((anime, index) => {
+        const imgUrl = anime.images?.jpg?.image_url || PLACEHOLDER_IMG;
+        const score = anime.score || 'N/A';
+        const episodes = anime.episodes ? `${anime.episodes} Eps` : 'Ongoing';
+
+        const card = document.createElement('a');
+        card.href = anime.url ? anime.url : `https://myanimelist.net/anime/${anime.mal_id}`;
+        card.target = '_blank';
+        card.className = 'trending-card';
+
+        card.innerHTML = `
+            <h3 style="color: #6b7280; font-size: 1.1rem; min-width: 15px;">${index + 1}</h3>
+            <img src="${imgUrl}" alt="${anime.title}" class="trending-img" loading="lazy">
+            <div class="trending-info">
+                <h4>${anime.title}</h4>
+                <p>⭐ ${score} | 📺 ${episodes}</p>
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
+}
