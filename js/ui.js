@@ -120,7 +120,26 @@ export function renderAnimeCards(animeList, containerSelector = '#anime-grid', i
                 ${buttonHTML}
             </div>
         `;
+        const dislikeBtn = card.querySelector('.dislike-btn');
+        if (dislikeBtn) {
+            dislikeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
 
+                const animeId = anime.mal_id;
+                let dislikedList = JSON.parse(localStorage.getItem('dislikedList')) || [];
+
+                if (!dislikedList.includes(animeId)) {
+                    dislikedList.push(animeId);
+                    localStorage.setItem('dislikedList', JSON.stringify(dislikedList));
+                }
+
+                // Smoothly fade out and remove from DOM
+                card.style.transition = 'opacity 0.2s ease';
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 200);
+            });
+        }
         resultsContainer.appendChild(card);
     });
 }

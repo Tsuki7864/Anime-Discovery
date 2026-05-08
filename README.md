@@ -1,4 +1,4 @@
-# Anime-Discovery - Ilyas do the README; open the assignment in the google clssroom and follow the instructions shown.
+# Anime-Discovery
     
 Project overview : 
 Anime-Discovery is a web app that helps users find anime simmilar to one they already like. instead of random recommendations, the app compares shared traits like genre, themes, studio, and episode length to rank results by similary. 
@@ -22,6 +22,6 @@ Key features:
  5. Make sure these files exist 
 
  Usage instruction: 
-  2. Search for anime 
-  3. hover over options select want or watched 
-  4. press smart recommendations 
+1. Search: Use the homepage to find your favorite anime.
+2. Track: Click the bookmark icon for "Want to Watch" or the checkmark for "Watched".
+3. Smart Suggestions: Based on the genres and types of anime you track, click the "Smart Recommendations" button to get personalized picks!

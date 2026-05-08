@@ -233,14 +233,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const genreArray = Object.entries(userProfile.genrePreferences);
                 genreArray.sort((a, b) => b[1] - a[1]);
 
-                // Get the NAMES of the top 3 tags (e.g., ["Action", "Isekai", "Mecha"])
+                // Get the NAMES of the top 3 tags
                 const topTagNames = genreArray.slice(0, 3).map(g => g[0]);
-
-                // We need to map these names back to their Jikan mal_ids. 
-                // We'll create a helper function for this (see below)
                 const topTagIds = await getJikanIdsForTags(topTagNames);
 
-                // Build the query string for Jikan
                 let genreQuery = "";
                 if (topTagIds.length > 0) {
                     genreQuery = `&genres=${topTagIds.join(',')}`;
@@ -250,10 +246,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let fetchAttempts = 0;
 
                 while (finalPicks.length < 12 && fetchAttempts < 4) {
-                    const randomPage = Math.floor(Math.random() * 5) + 1; // Limit pages to 1-5 for better matches
+                    const randomPage = Math.floor(Math.random() * 5) + 1;
 
                     // --- 2. The NEW Targeted API Fetch ---
-                    // Notice we replaced the /top endpoint with the /anime search endpoint!
                     let batch = await fetchFromJikan(`/anime?order_by=score&sort=desc&page=${randomPage}&limit=25${sfwParam}${genreQuery}`);
                     batch = filterExplicitContent(batch);
 
@@ -264,12 +259,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     fetchAttempts++;
                 }
 
-                // ... (Keep the rest of your original try block here - sorting, UI updates, etc.) ...
+                // --- 3. THE INTERCEPT: Pass data through the Smart Algorithm ---
+                // (This handles deduplication and dislike filtering)
+                finalPicks = processRecommendations(finalPicks);
 
-                // Remove any duplicates just in case the random pages overlapped
-                finalPicks = [...new Map(finalPicks.map(anime => [anime.mal_id, anime])).values()];
-
-                // Sort them highest to lowest
+                // Sort them highest to lowest by your custom matchScore
                 finalPicks.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
 
                 // Change the page title
@@ -280,10 +274,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const paginationControls = document.getElementById('pagination-controls');
                 if (paginationControls) paginationControls.style.display = 'none';
 
-                // Render exactly 12 anime for your 6-column grid!
+                // Render exactly 12 anime for your grid
                 renderAnimeCards(finalPicks.slice(0, 12));
 
-                // ... cooldown timer ...
+                // Cooldown timer
                 suggestBtn.textContent = "Wait 3s...";
                 setTimeout(() => {
                     suggestBtn.disabled = false;
@@ -510,4 +504,39 @@ async function loadTrendingSidebar() {
 
     // Send it to UI.js to be drawn!
     renderTrendingAnime(trendingData);
+}
+/**
+ * THE SMART ALGORITHM: Filters out dislikes and deduplicates franchises.
+ */
+function processRecommendations(rawAnimeList) {
+    // --- STEP A: DISLIKE CHECK ---
+    const dislikedList = JSON.parse(localStorage.getItem('dislikedList')) || [];
+    let filteredList = rawAnimeList.filter(anime => !dislikedList.includes(anime.mal_id));
+
+    // --- STEP B: DEDUPLICATION ---
+    const uniqueFranchises = new Map();
+
+    filteredList.forEach(anime => {
+        // Find the base franchise name
+        let baseTitle = anime.title.split(':')[0].trim();
+        baseTitle = baseTitle.split('-')[0].trim();
+        const franchiseKey = baseTitle.toLowerCase();
+
+        // Prioritize matchScore first, fallback to standard API score
+        const currentScore = anime.matchScore || anime.score || 0;
+
+        if (!uniqueFranchises.has(franchiseKey)) {
+            uniqueFranchises.set(franchiseKey, anime);
+        } else {
+            const existingAnime = uniqueFranchises.get(franchiseKey);
+            const existingScore = existingAnime.matchScore || existingAnime.score || 0;
+
+            // Keep the one that scored higher in your algorithm
+            if (currentScore > existingScore) {
+                uniqueFranchises.set(franchiseKey, anime);
+            }
+        }
+    });
+
+    return Array.from(uniqueFranchises.values());
 }

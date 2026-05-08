@@ -30,6 +30,19 @@
 
             window.location.href = `html/results.html?q=${encodeURIComponent(input)}`;
         }
+        document.addEventListener("DOMContentLoaded", () => {
+            const homeSearchInput = document.querySelector(".search-box input");
+
+            if (homeSearchInput) {
+                homeSearchInput.addEventListener("keypress", (event) => {
+                    // Check if the key pressed was 'Enter'
+                    if (event.key === "Enter") {
+                        event.preventDefault(); // Prevents any weird page reloading
+                        searchAnime();          // Fires the search function!
+                    }
+                });
+            }
+        });
     </script>
 
 </body>
